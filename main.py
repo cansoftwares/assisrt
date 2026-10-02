@@ -48,8 +48,13 @@ st.write("### ⚖️ Assistente Especialista em NBS e Reforma Tributária")
 st.markdown("Consulte códigos de serviços (LC 116/2003), códigos NBS, descrições oficiais e exemplos práticos.")
 
 # Chave e Inicialização do Cliente Gemini via OpenAI SDK
+#modelo = OpenAI(
+   # api_key="AQ.Ab8RN6IKsZFieIurPFiN1ywQ3MK-p8-viH_xxUTy_hGrkRAUZw",
+   # base_url="https://generativelanguage.googleapis.com/v1beta/openai"
+#)
+
 modelo = OpenAI(
-    api_key="AQ.Ab8RN6IKsZFieIurPFiN1ywQ3MK-p8-viH_xxUTy_hGrkRAUZw",
+    api_key=st.secrets["GOOGLE_API_KEY"],
     base_url="https://generativelanguage.googleapis.com/v1beta/openai"
 )
 
