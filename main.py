@@ -6,14 +6,14 @@ from openai import OpenAI
 # Configuração da Página do Streamlit
 st.set_page_config(page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️")
 
-# Estilo CSS avançado para largura equilibrada (70%) e layout estilo WhatsApp
+# Estilo CSS avançado para largura de 100% (igualando ao input) e layout estilo WhatsApp
 st.markdown(
     """
 <style>
-    /* Define uma largura máxima de 70% para os balões de chat */
+    /* Faz com que os balões de chat ocupem 100% da largura, alinhando perfeitamente com o input */
     .stChatMessage {
-        max-width: 70% !important;
-        width: 70% !important;
+        max-width: 100% !important;
+        width: 100% !important;
         border-radius: 15px;
         padding: 12px 18px;
         margin-bottom: 12px;
