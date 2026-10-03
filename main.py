@@ -71,27 +71,6 @@ st.markdown(
     table {
         width: 100% !important;
     }
-
-    /* Estilização do Botão de Copiar Tabela */
-    .btn-copiar-tabela {
-        background-color: #f8f9fa;
-        color: #31333f;
-        border: 1px solid rgba(49, 51, 63, 0.2);
-        padding: 6px 14px;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        font-weight: 500;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        margin-top: 10px;
-        transition: all 0.2s ease;
-    }
-    .btn-copiar-tabela:hover {
-        background-color: #f0f2f6;
-        border-color: rgba(49, 51, 63, 0.4);
-    }
 </style>
 """,
     unsafe_allow_html=True,
@@ -248,13 +227,12 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
         st.markdown(
             f"**Tribô – Seu assistente na Reforma Tributária**\n\n{content}"
         )
-        # Injeta o botão de cópia via componente HTML logo abaixo da tabela da resposta da IA
+        # Injeta o botão com script compatível com o contexto do Streamlit (execCommand no documento pai)
         components.html(
             f"""
             <script>
                 function copiarTabela_{idx}() {{
                     const doc = window.parent.document;
-                    // Encontra a tabela dentro deste balão de chat específico
                     const chats = doc.querySelectorAll('[data-testid="stChatMessage-assistant"]');
                     const meuChat = chats[{idx // 2}]; 
                     if (!meuChat) return;
@@ -271,19 +249,30 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                         textoCopia += dadosLinha.join('\\t') + '\\n';
                     }});
 
-                    navigator.clipboard.writeText(textoCopia).then(() => {{
+                    // Cria um elemento textarea temporário na página principal para realizar a cópia universal
+                    const textarea = doc.createElement('textarea');
+                    textarea.value = textoCopia;
+                    doc.body.appendChild(textarea);
+                    textarea.select();
+                    try {{
+                        doc.execCommand('copy');
                         const btn = document.getElementById('btn_copiar_{idx}');
-                        btn.innerHTML = '📋 Tabela Copiada com Sucesso!';
-                        btn.style.backgroundColor = '#d4edda';
-                        btn.style.borderColor = '#c3e6cb';
-                        btn.style.color = '#155724';
-                        setTimeout(() => {{
-                            btn.innerHTML = '📋 Copiar Tabela para o Excel';
-                            btn.style.backgroundColor = '#f8f9fa';
-                            btn.style.borderColor = 'rgba(49, 51, 63, 0.2)';
-                            btn.style.color = '#31333f';
-                        }}, 2500);
-                    }});
+                        if (btn) {{
+                            btn.innerHTML = '📋 Tabela Copiada com Sucesso!';
+                            btn.style.backgroundColor = '#d4edda';
+                            btn.style.borderColor = '#c3e6cb';
+                            btn.style.color = '#155724';
+                            setTimeout(() => {{
+                                btn.innerHTML = '📋 Copiar Tabela para o Excel';
+                                btn.style.backgroundColor = '#f8f9fa';
+                                btn.style.borderColor = 'rgba(49, 51, 63, 0.2)';
+                                btn.style.color = '#31333f';
+                            }}, 2500);
+                        }}
+                    }} catch (err) {{
+                        console.error('Erro ao copiar', err);
+                    }}
+                    doc.body.removeChild(textarea);
                 }}
             </script>
             <style>
@@ -369,7 +358,6 @@ Em seguida, monte a tabela contendo estritamente os códigos e descrições ofic
 
     resposta_ia = resposta_modelo.choices[0].message.content
 
-    # Adiciona a mensagem do assistente e força o rerun imediato para desenhar o botão corretamente
     mensagem_ia = {"role": "assistant", "content": resposta_ia}
     st.session_state["lista_mensagens"].append(mensagem_ia)
     st.rerun()
