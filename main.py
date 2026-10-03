@@ -26,12 +26,13 @@ st.markdown(
         border-radius: 12px !important;
     }
 
-    /* Cabeçalho principal otimizado para preencher o espaço lateral sem quebrar a linha */
+    /* Cabeçalho principal ajustado milimetricamente para caber em uma única linha */
     .cabecalho-principal {
-        font-size: 1.78rem !important;
+        font-size: 1.45rem !important;
         font-weight: 600;
         margin-bottom: 0.5rem;
         color: inherit;
+        white-space: nowrap;
     }
 
     /* Balões de chat ocupando 100% da largura alinhados */
@@ -74,7 +75,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Cabeçalho visual principal ajustado para o tamanho ideal de preenchimento
+# Cabeçalho visual principal travado em linha única
 st.markdown(
     '<p class="cabecalho-principal">⚖️ Assistente Especialista em NBS e Reforma'
     " Tributária</p>",
