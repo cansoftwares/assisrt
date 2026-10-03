@@ -6,33 +6,43 @@ from openai import OpenAI
 # Configuração da Página do Streamlit
 st.set_page_config(page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️")
 
-# Estilo CSS refinado: corrige a cor da fonte do input, unifica o fundo escuro da página inteira e estiliza a barra inferior
+# Estilo CSS ajustado: unifica o fundo escuro da página e de todo o rodapé do input perfeitamente
 st.markdown(
     """
 <style>
-    /* Fundo geral da aplicação e da barra inferior unificados */
-    .stApp, [data-testid="stChatInput"] {
+    /* Fundo geral da aplicação */
+    .stApp {
         background-color: #0b141a !important;
         color: #e9edef !important;
-    }
-
-    /* Garante fundo escuro na barra flutuante do chat input */
-    [data-testid="stChatInput"] {
-        padding: 10px;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    /* Caixa de texto do input com fundo adequado e texto visível (escuro para contraste perfeito) */
-    [data-testid="stChatInput"] textarea {
-        background-color: #2a3942 !important;
-        color: #ffffff !important;
-        border-radius: 10px !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
     }
 
     /* Fundo da barra lateral */
     [data-testid="stSidebar"] {
         background-color: #111b21 !important;
+    }
+
+    /* Remove o fundo branco nativo do rodapé/container inferior do Streamlit */
+    [data-testid="stBottom"], [data-testid="stBottomBlockContainer"] {
+        background-color: #0b141a !important;
+    }
+
+    /* Container externo da caixa de input com fundo escuro integrado */
+    [data-testid="stChatInput"] {
+        background-color: #0b141a !important;
+        border-top: none !important;
+    }
+
+    /* Caixa interna onde o usuário digita (fundo escuro e borda sutil) */
+    [data-testid="stChatInput"] > div {
+        background-color: #111b21 !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* Texto digitado pelo usuário visível e com cor clara */
+    [data-testid="stChatInput"] textarea {
+        background-color: transparent !important;
+        color: #ffffff !important;
     }
 
     /* Balões de chat ocupando 100% da largura alinhados */
