@@ -55,45 +55,22 @@ def carregar_base_lc116():
     caminho_excel = "AnexoVIII-CorrelacaoItemNBSIndOpCClassTrib_IBSCBS_V1.00.00.xlsx"
     if os.path.exists(caminho_excel):
         try:
-            # Lê o Excel permitindo que o pandas encontre os dados reais (ignorando cabeçalhos soltos se houver)
-            df = pd.read_excel(caminho_excel)
+            # Lendo a aba correta 'tabela geral' forçando tudo como string para não corromper códigos como 17.02
+            df = pd.read_excel(caminho_excel, sheet_name='tabela geral', dtype=str)
             
-            # Normaliza os nomes das colunas para localizar independentemente de maiúsculas/minúsculas
-            df.columns = [str(col).strip().lower() for col in df.columns]
+            # Limpa os nomes das colunas
+            df.columns = [str(col).strip() for col in df.columns]
             
-            # Tenta identificar quais colunas correspondem ao item/subitem e à descrição
-            col_item = None
-            col_desc = None
-            
-            for col in df.columns:
-                if 'item' in col or 'subitem' in col or 'lc' in col:
-                    col_item = col
-                    break
-            
-            for col in df.columns:
-                if 'descri' in col:
-                    col_desc = col
-                    break
+            # Preenche as células vazias para baixo (forward fill) caso a planilha venha com células mescladas
+            df['Item LC 116'] = df['Item LC 116'].ffill()
+            df['Descrição Item'] = df['Descrição Item'].ffill()
             
             base_mapeada = {}
-            
-            # Se achou pelos nomes das colunas, usa eles; senão, usa a posição padrão (Coluna 0 e Coluna 1)
-            if col_item and col_desc:
-                for _, row in df.iterrows():
-                    subitem = str(row[col_item]).strip()
-                    descricao = str(row[col_desc]).strip()
-                    if subitem and subitem != "nan" and descricao != "nan":
-                        base_mapeada[subitem] = descricao
-            else:
-                # Fallback posicional estrito (ignora as primeiras linhas de cabeçalho se necessário)
-                df_raw = pd.read_excel(caminho_excel, header=None)
-                for _, row in df_raw.iterrows():
-                    subitem = str(row.iloc[0]).strip()
-                    descricao = str(row.iloc[1]).strip()
-                    # Filtra apenas linhas que parecem códigos de subitens válidos (ex: com ponto ou números)
-                    if subitem and subitem != "nan" and ("." in subitem or subitem.isdigit()):
-                        base_mapeada[subitem] = descricao
-                        
+            for _, row in df.iterrows():
+                subitem = str(row['Item LC 116']).strip()
+                descricao = str(row['Descrição Item']).strip()
+                if subitem and subitem != "nan":
+                    base_mapeada[subitem] = descricao
             return base_mapeada
         except Exception as e:
             return {}
