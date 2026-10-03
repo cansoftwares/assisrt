@@ -75,16 +75,16 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Cabeçalho visual principal e subtítulo volumoso e equilibrado
+# Cabeçalho visual principal e subtítulo na medida exata de duas linhas elegantes
 st.markdown(
     '<p class="cabecalho-principal">⚖️ Assistente Especialista em NBS e Reforma'
     " Tributária</p>",
     unsafe_allow_html=True,
 )
 st.markdown(
-    "Ferramenta avançada para consulta inteligente de códigos de serviços da LC"
-    " 116/2003, descrições normativas oficiais, correspondências detalhadas de"
-    " equivalência NBS e diretrizes práticas para o novo ecossistema tributário."
+    "Consulte códigos de serviços da LC 116/2003, descrições normativas oficiais"
+    " e correspondências detalhadas de equivalência NBS para o ecossistema"
+    " tributário."
 )
 
 
@@ -238,7 +238,7 @@ O usuário consultou o subitem '{texto_processado}' da LC 116/2003.
 - Códigos NBS Oficiais Correspondentes:
 {texto_nbs_formatado}
 
-DIRETRIZ DE REDAÇÃO PARA LA IA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial:
+DIRETRIZ DE REDAÇÃO PARA A IA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial:
 "Com base no subitem {texto_processado} ({descricao_oficial}) da LC 116/2003 e nas correspondências oficiais da Nomenclatura Brasileira de Serviços (NBS), apresento abaixo o mapeamento fiscal para enquadramento da operação:"
 
 Em seguida, monte a tabela contendo estritamente os códigos e descrições oficiais listados acima, criando os exemplos práticos de atuação.
