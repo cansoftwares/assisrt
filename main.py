@@ -4,7 +4,7 @@ import streamlit as st
 from openai import OpenAI
 
 # Configuração da Página do Streamlit
-st.set_page_config(page_title="Tribô - Assistente NBS & Reforma Tributária", page_icon="⚖️")
+st.set_page_config(page_title="Tribô - Assistente NBS & Reforma Tributária", page_icon="⚖️️")
 
 # Estilo CSS focado em delimitar a área com bordas refinadas e estilizar os nomes
 st.markdown(
@@ -64,8 +64,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Título do Chatbot
-st.write("### ⚖️ Tribô – Seu assistente na Reforma Tributária")
+# Cabeçalho original mantido limpo e profissional
+st.write("### ⚖️ Assistente Especialista em NBS e Reforma Tributária")
 st.markdown(
     "Consulte códigos de serviços (LC 116/2003), descrições oficiais,"
     " equivalências NBS e exemplos práticos."
@@ -175,7 +175,7 @@ if "lista_mensagens" not in st.session_state:
 avatar_usuario = "perfil_usuario.png"
 avatar_assistente = "icone_assistente.png"
 
-# Exibir o histórico de mensagens com os nomes identificados em negrito
+# Exibir o histórico de mensagens com os nomes identificados em negrito apenas nos balões
 for mensagem in st.session_state["lista_mensagens"]:
   if mensagem["role"] != "system":
     role = mensagem["role"]
