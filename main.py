@@ -6,25 +6,38 @@ from openai import OpenAI
 # Configuração da Página do Streamlit
 st.set_page_config(page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️")
 
-# Estilo CSS avançado para largura de 100% (igualando ao input) e layout estilo WhatsApp
+# Estilo CSS avançado para o fundo estilo mensageiro, largura de 100% e balões destacados
 st.markdown(
     """
 <style>
-    /* Faz com que os balões de chat ocupem 100% da largura, alinhando perfeitamente com o input */
+    /* Fundo geral da aplicação estilo chat corporativo/mensageiro */
+    .stApp {
+        background-color: #0b141a !important;
+        color: #e9edef !important;
+    }
+
+    /* Fundo da barra lateral (se houver) */
+    [data-testid="stSidebar"] {
+        background-color: #111b21 !important;
+    }
+
+    /* Faz com que os balões de chat ocupem 100% da largura, alinhando com o input */
     .stChatMessage {
         max-width: 100% !important;
         width: 100% !important;
         border-radius: 15px;
         padding: 12px 18px;
         margin-bottom: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
     }
 
-    /* Mensagem do Usuário (Alinhada à Direita e com cor de destaque) */
+    /* Mensagem do Usuário (Alinhada à Direita e com cor de destaque do WhatsApp) */
     [data-testid="stChatMessage-user"] {
-        background-color: #005c4b !important; /* Verde escuro tipo WhatsApp */
+        background-color: #005c4b !important; 
         margin-left: auto !important;
         margin-right: 0px !important;
         flex-direction: row-reverse;
+        color: #ffffff !important;
     }
     
     /* Inverte a ordem do avatar do usuário para ficar na direita */
@@ -32,16 +45,40 @@ st.markdown(
         flex-direction: row-reverse;
     }
 
-    /* Mensagem do Assistente (Alinhada à Esquerda) */
+    /* Mensagem do Assistente (Alinhada à Esquerda e destacada) */
     [data-testid="stChatMessage-assistant"] {
-        background-color: #1f2c34 !important; /* Cinza/escuro tipo WhatsApp */
+        background-color: #202c33 !important; 
         margin-left: 0px !important;
         margin-right: auto !important;
+        color: #e9edef !important;
+    }
+
+    /* Ajuste de cor para os textos dentro dos balões */
+    .stChatMessage p, .stChatMessage li, .stChatMessage span {
+        color: #e9edef !important;
+    }
+
+    /* Estilização da caixa de input de texto inferior */
+    [data-testid="stChatInput"] textarea {
+        background-color: #2a3942 !important;
+        color: #e9edef !important;
+        border-radius: 10px !important;
     }
 
     /* Mantém as tabelas legíveis dentro do balão */
     table {
         width: 100% !important;
+        color: #e9edef !important;
+    }
+    
+    th {
+        background-color: #111b21 !important;
+        color: #ffffff !important;
+    }
+    
+    td {
+        background-color: #202c33 !important;
+        color: #e9edef !important;
     }
 </style>
 """,
@@ -203,7 +240,7 @@ O usuário consultou o subitem '{texto_processado}' da LC 116/2003.
 - Códigos NBS Oficiais Correspondentes:
 {texto_nbs_formatado}
 
-DIRETRIZ DE REDAÇÃO PARA A IA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial:
+DIRETRIZ DE REDAÇÃO PARA LA IA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial:
 "Com base no subitem {texto_processado} ({descricao_oficial}) da LC 116/2003 e nas correspondências oficiais da Nomenclatura Brasileira de Serviços (NBS), apresento abaixo o mapeamento fiscal para enquadramento da operação:"
 
 Em seguida, monte a tabela contendo estritamente os códigos e descrições oficiais listados acima, criando os exemplos práticos de atuação.
