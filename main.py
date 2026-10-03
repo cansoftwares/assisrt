@@ -67,7 +67,7 @@ st.markdown(
 )
 
 # Cabeçalho visual principal da aplicação (Mantido original)
-st.write("## ⚖️ Assistente Especialista em NBS e Reforma Tributária")
+st.write("#### ⚖️ Assistente Especialista em NBS e Reforma Tributária")
 st.markdown(
     "Consulte códigos de serviços (LC 116/2003), descrições oficiais,"
     " equivalências NBS e exemplos práticos."
