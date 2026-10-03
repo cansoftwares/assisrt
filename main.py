@@ -52,29 +52,49 @@ st.markdown("Consulte códigos de serviços (LC 116/2003), descrições oficiais
 # Função para carregar o Anexo VIII da raiz do projeto e buscar a descrição da LC 116
 @st.cache_data
 def carregar_base_lc116():
-    caminho_excel = "AnexoVIII-CorrelacaoItemNBSIndOpCClassTrib_IBSCBS_V1.00.00.xlsx"
-    if os.path.exists(caminho_excel):
-        try:
-            # Lendo a aba correta 'tabela geral' forçando tudo como string para não corromper códigos como 17.02
-            df = pd.read_excel(caminho_excel, sheet_name='tabela geral', dtype=str)
-            
-            # Limpa os nomes das colunas
-            df.columns = [str(col).strip() for col in df.columns]
-            
-            # Preenche as células vazias para baixo (forward fill) caso a planilha venha com células mescladas
-            df['Item LC 116'] = df['Item LC 116'].ffill()
-            df['Descrição Item'] = df['Descrição Item'].ffill()
-            
-            base_mapeada = {}
-            for _, row in df.iterrows():
-                subitem = str(row['Item LC 116']).strip()
-                descricao = str(row['Descrição Item']).strip()
-                if subitem and subitem != "nan":
-                    base_mapeada[subitem] = descricao
-            return base_mapeada
-        except Exception as e:
-            return {}
-    return {}
+  caminho_excel = "AnexoVIII-CorrelacaoItemNBSIndOpCClassTrib_IBSCBS_V1.00.00.xlsx"
+  if os.path.exists(caminho_excel):
+    try:
+      # Lê a aba 'tabela geral' forçando tudo como string para preservar zeros à esquerda (ex: 17.02)
+      df = pd.read_excel(caminho_excel, sheet_name="tabela geral", dtype=str)
+
+      # Padroniza os nomes das colunas
+      df.columns = [str(col).strip() for col in df.columns]
+
+      # Identifica as colunas pelo nome ou posição padrão (0: Item LC, 1: Descrição LC, 2: Código NBS, 3: Descrição NBS)
+      col_item_lc = df.columns[0]
+      col_desc_lc = df.columns[1]
+      col_nbs = df.columns[2]
+      col_desc_nbs = df.columns[3]
+
+      # Preenche as células vazias para baixo (forward fill) para resolver o problema das células mescladas em A e B
+      df[col_item_lc] = df[col_item_lc].ffill()
+      df[col_desc_lc] = df[col_desc_lc].ffill()
+
+      base_mapeada = {}
+      for _, row in df.iterrows():
+        subitem = str(row[col_item_lc]).strip()
+        desc_lc = str(row[col_desc_lc]).strip()
+        cod_nbs = str(row[col_nbs]).strip()
+        desc_nbs = str(row[col_desc_nbs]).strip()
+
+        if subitem and subitem != "nan":
+          if subitem not in base_mapeada:
+            base_mapeada[subitem] = {
+                "descricao_lc": desc_lc,
+                "nbs_oficiais": [],
+            }
+
+          # Adiciona o código NBS se ele for válido e existir na linha
+          if cod_nbs and cod_nbs != "nan":
+            base_mapeada[subitem]["nbs_oficiais"].append(
+                {"codigo": cod_nbs, "descricao": desc_nbs}
+            )
+
+      return base_mapeada
+    except Exception as e:
+      return {}
+  return {}
 
 # Carrega o dicionário de subitens
 dicionario_lc116 = carregar_base_lc116()
