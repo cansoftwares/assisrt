@@ -6,14 +6,17 @@ from openai import OpenAI
 # Configuração da Página do Streamlit
 st.set_page_config(page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️")
 
-# Estilo CSS definitivo para eliminar os fundos brancos e unificar o tema escuro em toda a página
+# Estilo CSS para criar um design de "card central" escuro e elegante estilo mensageiro
 st.markdown(
     """
 <style>
-    /* Força o fundo escuro em todos os containers principais, blocos e margens do Streamlit */
-    .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stMainBlockContainer"], .main {
+    /* Transforma o container central num painel/card com fundo escuro e cantos arredondados */
+    [data-testid="stMainBlockContainer"] {
         background-color: #0b141a !important;
         color: #e9edef !important;
+        border-radius: 20px !important;
+        padding: 3rem !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     }
 
     /* Fundo da barra lateral */
@@ -21,29 +24,19 @@ st.markdown(
         background-color: #111b21 !important;
     }
 
-    /* Remove qualquer fundo branco remanescente no rodapé e blocos inferiores */
-    [data-testid="stBottom"], [data-testid="stBottomBlockContainer"] {
-        background-color: #0b141a !important;
-    }
-
-    /* Container externo da caixa de input unificado com o fundo escuro */
+    /* Caixa de input flutuante integrada ao tema escuro do card central */
     [data-testid="stChatInput"] {
-        background-color: #0b141a !important;
+        background-color: transparent !important;
         border-top: none !important;
-        padding-bottom: 20px;
+        padding-bottom: 10px;
     }
 
-    /* Caixa interna onde o usuário digita (fundo escuro harmónico e texto visível em branco) */
-    [data-testid="stChatInput"] > div {
-        background-color: #111b21 !important;
+    /* Área de digitação com fundo harmonizado e texto perfeitamente visível */
+    [data-testid="stChatInput"] textarea {
+        background-color: #2a3942 !important;
+        color: #ffffff !important;
         border-radius: 12px !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    }
-
-    /* Texto digitado pelo utilizador */
-    [data-testid="stChatInput"] textarea {
-        background-color: transparent !important;
-        color: #ffffff !important;
     }
 
     /* Balões de chat ocupando 100% da largura alinhados */
