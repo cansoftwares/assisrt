@@ -71,6 +71,27 @@ st.markdown(
     table {
         width: 100% !important;
     }
+
+    /* Estilização do Botão de Copiar Tabela */
+    .btn-copiar-tabela {
+        background-color: #f8f9fa;
+        color: #31333f;
+        border: 1px solid rgba(49, 51, 63, 0.2);
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 10px;
+        transition: all 0.2s ease;
+    }
+    .btn-copiar-tabela:hover {
+        background-color: #f0f2f6;
+        border-color: rgba(49, 51, 63, 0.4);
+    }
 </style>
 """,
     unsafe_allow_html=True,
@@ -81,7 +102,6 @@ components.html(
     """
     <script>
         function forcarFocoInput() {
-            // Varre o documento pai (a página principal do Streamlit) buscando o textarea do chat
             const doc = window.parent.document;
             const chatInput = doc.querySelector('[data-testid="stChatInput"] textarea');
             if (chatInput) {
@@ -91,7 +111,6 @@ components.html(
             return false;
         }
 
-        // Tenta focar repetidamente nos primeiros segundos após o carregamento
         let tentativas = 0;
         const intervalo = setInterval(function() {
             if (forcarFocoInput() || tentativas > 25) {
@@ -123,10 +142,7 @@ def carregar_base_lc116():
   caminho_excel = "AnexoVIII-CorrelacaoItemNBSIndOpCClassTrib_IBSCBS_V1.00.00.xlsx"
   if os.path.exists(caminho_excel):
     try:
-      # Lê a aba 'tabela geral' forçando tudo como string para preservar zeros à esquerda (ex: 17.02)
       df = pd.read_excel(caminho_excel, sheet_name="tabela geral", dtype=str)
-
-      # Padroniza os nomes das colunas
       df.columns = [str(col).strip() for col in df.columns]
 
       col_item_lc = df.columns[0]
@@ -134,7 +150,6 @@ def carregar_base_lc116():
       col_nbs = df.columns[2]
       col_desc_nbs = df.columns[3]
 
-      # Preenche as células vazias para baixo (forward fill) para resolver o problema das células mescladas em A e B
       df[col_item_lc] = df[col_item_lc].ffill()
       df[col_desc_lc] = df[col_desc_lc].ffill()
 
@@ -163,7 +178,6 @@ def carregar_base_lc116():
   return {}
 
 
-# Carrega o dicionário de subitens estruturado
 dicionario_lc116 = carregar_base_lc116()
 
 # Inicialização do Cliente OpenAI configurado para o Gemini API
@@ -221,7 +235,7 @@ avatar_usuario = "perfil_usuario.png"
 avatar_assistente = "icone_assistente.png"
 
 # Exibir o histórico de mensagens com os nomes identificados em negrito apenas nos balões
-for mensagem in st.session_state["lista_mensagens"]:
+for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
   if mensagem["role"] != "system":
     role = mensagem["role"]
     content = mensagem["content"]
@@ -231,7 +245,74 @@ for mensagem in st.session_state["lista_mensagens"]:
         st.markdown(f"**Você**\n\n{content}")
     else:
       with st.chat_message("assistant", avatar=avatar_assistente):
-        st.markdown(f"**Tribô – Seu assistente na Reforma Tributária**\n\n{content}")
+        st.markdown(
+            f"**Tribô – Seu assistente na Reforma Tributária**\n\n{content}"
+        )
+        # Injeta o botão de cópia via componente HTML logo abaixo da tabela da resposta da IA
+        components.html(
+            f"""
+            <script>
+                function copiarTabela_{idx}() {{
+                    const doc = window.parent.document;
+                    // Encontra a tabela dentro deste balão de chat específico
+                    const chats = doc.querySelectorAll('[data-testid="stChatMessage-assistant"]');
+                    const meuChat = chats[{idx // 2}]; 
+                    if (!meuChat) return;
+                    
+                    const tabela = meuChat.querySelector('table');
+                    if (!tabela) return;
+
+                    let textoCopia = "";
+                    const linhas = tabela.querySelectorAll('tr');
+                    linhas.forEach(linha => {{
+                        let cols = linha.querySelectorAll('th, td');
+                        let dadosLinha = [];
+                        cols.forEach(col => dadosLinha.push(col.innerText.trim()));
+                        textoCopia += dadosLinha.join('\\t') + '\\n';
+                    }});
+
+                    navigator.clipboard.writeText(textoCopia).then(() => {{
+                        const btn = document.getElementById('btn_copiar_{idx}');
+                        btn.innerHTML = '📋 Tabela Copiada com Sucesso!';
+                        btn.style.backgroundColor = '#d4edda';
+                        btn.style.borderColor = '#c3e6cb';
+                        btn.style.color = '#155724';
+                        setTimeout(() => {{
+                            btn.innerHTML = '📋 Copiar Tabela para o Excel';
+                            btn.style.backgroundColor = '#f8f9fa';
+                            btn.style.borderColor = 'rgba(49, 51, 63, 0.2)';
+                            btn.style.color = '#31333f';
+                        }}, 2500);
+                    }});
+                }}
+            </script>
+            <style>
+                .btn-copiar-tabela {{
+                    background-color: #f8f9fa;
+                    color: #31333f;
+                    border: 1px solid rgba(49, 51, 63, 0.2);
+                    padding: 6px 14px;
+                    border-radius: 8px;
+                    font-size: 0.85rem;
+                    font-weight: 500;
+                    cursor: pointer;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    font-family: sans-serif;
+                    transition: all 0.2s ease;
+                }}
+                .btn-copiar-tabela:hover {{
+                    background-color: #f0f2f6;
+                    border-color: rgba(49, 51, 63, 0.4);
+                }}
+            </style>
+            <button id="btn_copiar_{idx}" class="btn-copiar-tabela" onclick="copiarTabela_{idx}()">
+                📋 Copiar Tabela para o Excel
+            </button>
+        """,
+            height=45,
+        )
 
 # Entrada do usuário
 mensagem_usuario = st.chat_input(
@@ -239,11 +320,9 @@ mensagem_usuario = st.chat_input(
 )
 
 if mensagem_usuario:
-  # Mostra a mensagem do usuário na tela com o nome em negrito
   with st.chat_message("user", avatar=avatar_usuario):
     st.markdown(f"**Você**\n\n{mensagem_usuario}")
 
-  # Processamento Inteligente: Verifica se o texto digitado corresponde a um subitem mapeado no Excel
   texto_processado = mensagem_usuario.strip()
   contexto_extraido = ""
 
@@ -273,7 +352,6 @@ DIRETRIZ DE REDAÇÃO PARA A IA: Na introdução da sua resposta, utilize obriga
 Em seguida, monte a tabela contendo estritamente os códigos e descrições oficiais listados acima, criando os exemplos práticos de atuação.
 """
 
-  # Monta a instrução de sistema dinâmica combinando a base com o contexto extraído (se houver)
   system_prompt_final = {
       "role": "system",
       "content": system_prompt_base + contexto_extraido,
@@ -282,10 +360,8 @@ Em seguida, monte a tabela contendo estritamente os códigos e descrições ofic
   novo_usuario_msg = {"role": "user", "content": mensagem_usuario}
   st.session_state["lista_mensagens"].append(novo_usuario_msg)
 
-  # Monta a lista completa para enviar para a API
   mensagens_para_ia = [system_prompt_final] + st.session_state["lista_mensagens"]
 
-  # Resposta da IA com o modelo original
   try:
     resposta_modelo = modelo.chat.completions.create(
         messages=mensagens_para_ia, model="gemini-flash-lite-latest"
@@ -293,12 +369,10 @@ Em seguida, monte a tabela contendo estritamente os códigos e descrições ofic
 
     resposta_ia = resposta_modelo.choices[0].message.content
 
-    # Exibir a resposta da IA na tela com o nome do assistente em negrito
-    with st.chat_message("assistant", avatar=avatar_assistente):
-      st.markdown(f"**Tribô – Seu assistente na Reforma Tributária**\n\n{resposta_ia}")
-
+    # Adiciona a mensagem do assistente e força o rerun imediato para desenhar o botão corretamente
     mensagem_ia = {"role": "assistant", "content": resposta_ia}
     st.session_state["lista_mensagens"].append(mensagem_ia)
+    st.rerun()
 
   except Exception as e:
     st.error(f"Ocorreu um erro ao consultar a IA: {e}")
