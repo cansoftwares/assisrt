@@ -6,90 +6,58 @@ from openai import OpenAI
 # Configuração da Página do Streamlit
 st.set_page_config(page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️")
 
-# Estilo CSS para criar um design de "card central" escuro e elegante estilo mensageiro
+# Estilo CSS focado em delimitar a área com bordas refinadas, mantendo a limpeza nativa
 st.markdown(
     """
 <style>
-    /* Transforma o container central num painel/card com fundo escuro e cantos arredondados */
+    /* Delimita e destaca a área central da aplicação com bordas elegantes e sombra suave */
     [data-testid="stMainBlockContainer"] {
-        background-color: #0b141a !important;
-        color: #e9edef !important;
-        border-radius: 20px !important;
-        padding: 3rem !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    }
-
-    /* Fundo da barra lateral */
-    [data-testid="stSidebar"] {
-        background-color: #111b21 !important;
-    }
-
-    /* Caixa de input flutuante integrada ao tema escuro do card central */
-    [data-testid="stChatInput"] {
+        border: 1px solid rgba(49, 51, 63, 0.2) !important;
+        border-radius: 16px !important;
+        padding: 2.5rem !important;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
         background-color: transparent !important;
-        border-top: none !important;
-        padding-bottom: 10px;
     }
 
-    /* Área de digitação com fundo harmonizado e texto perfeitamente visível */
-    [data-testid="stChatInput"] textarea {
-        background-color: #2a3942 !important;
-        color: #ffffff !important;
+    /* Estilização refinada para a caixa de input flutuante */
+    [data-testid="stChatInput"] {
         border-radius: 12px !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
     }
 
     /* Balões de chat ocupando 100% da largura alinhados */
     .stChatMessage {
         max-width: 100% !important;
         width: 100% !important;
-        border-radius: 15px;
+        border-radius: 12px;
         padding: 12px 18px;
         margin-bottom: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(49, 51, 63, 0.1);
     }
 
-    /* Mensagem do Utilizador (Alinhada à Direita e com cor de destaque do WhatsApp) */
+    /* Mensagem do Usuário (Alinhada à Direita com destaque corporativo) */
     [data-testid="stChatMessage-user"] {
-        background-color: #005c4b !important; 
+        background-color: #f0f2f6 !important; 
         margin-left: auto !important;
         margin-right: 0px !important;
         flex-direction: row-reverse;
-        color: #ffffff !important;
     }
     
-    /* Inverte a ordem do avatar do utilizador para ficar na direita */
+    /* Inverte a ordem do avatar do usuário para ficar na direita */
     [data-testid="stChatMessage-user"] > div:first-child {
         flex-direction: row-reverse;
     }
 
-    /* Mensagem do Assistente (Alinhada à Esquerda e destacada) */
+    /* Mensagem do Assistente (Alinhada à Esquerda) */
     [data-testid="stChatMessage-assistant"] {
-        background-color: #202c33 !important; 
+        background-color: #ffffff !important; 
         margin-left: 0px !important;
         margin-right: auto !important;
-        color: #e9edef !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
     }
 
-    /* Ajuste de cor para os textos dentro dos balões */
-    .stChatMessage p, .stChatMessage li, .stChatMessage span {
-        color: #e9edef !important;
-    }
-
-    /* Tabelas legíveis dentro do balão */
+    /* Mantém as tabelas legíveis dentro do balão */
     table {
         width: 100% !important;
-        color: #e9edef !important;
-    }
-    
-    th {
-        background-color: #111b21 !important;
-        color: #ffffff !important;
-    }
-    
-    td {
-        background-color: #202c33 !important;
-        color: #e9edef !important;
     }
 </style>
 """,
