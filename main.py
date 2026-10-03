@@ -6,7 +6,7 @@ from openai import OpenAI
 # Configuração da Página do Streamlit
 st.set_page_config(page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️")
 
-# Estilo CSS avançado para o fundo estilo mensageiro, largura de 100% e balões destacados
+# Estilo CSS limpo: mantém o fundo escuro, os balões 100% e descarta a customização problemática do input
 st.markdown(
     """
 <style>
@@ -16,12 +16,12 @@ st.markdown(
         color: #e9edef !important;
     }
 
-    /* Fundo da barra lateral (se houver) */
+    /* Fundo da barra lateral */
     [data-testid="stSidebar"] {
         background-color: #111b21 !important;
     }
 
-    /* Faz com que os balões de chat ocupem 100% da largura, alinhando com o input */
+    /* Balões de chat ocupando 100% da largura alinhados */
     .stChatMessage {
         max-width: 100% !important;
         width: 100% !important;
@@ -58,14 +58,7 @@ st.markdown(
         color: #e9edef !important;
     }
 
-    /* Estilização da caixa de input de texto inferior */
-    [data-testid="stChatInput"] textarea {
-        background-color: #2a3942 !important;
-        color: #e9edef !important;
-        border-radius: 10px !important;
-    }
-
-    /* Mantém as tabelas legíveis dentro do balão */
+    /* Tabelas legíveis dentro do balão */
     table {
         width: 100% !important;
         color: #e9edef !important;
@@ -240,7 +233,7 @@ O usuário consultou o subitem '{texto_processado}' da LC 116/2003.
 - Códigos NBS Oficiais Correspondentes:
 {texto_nbs_formatado}
 
-DIRETRIZ DE REDAÇÃO PARA LA IA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial:
+DIRETRIZ DE REDAÇÃO PARA A IA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial:
 "Com base no subitem {texto_processado} ({descricao_oficial}) da LC 116/2003 e nas correspondências oficiais da Nomenclatura Brasileira de Serviços (NBS), apresento abaixo o mapeamento fiscal para enquadramento da operação:"
 
 Em seguida, monte a tabela contendo estritamente os códigos e descrições oficiais listados acima, criando os exemplos práticos de atuação.
