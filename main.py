@@ -1,13 +1,14 @@
-import streamlit as st
-import pandas as pd
-from openai import OpenAI
 import os
+import pandas as pd
+import streamlit as st
+from openai import OpenAI
 
 # Configuração da Página do Streamlit
 st.set_page_config(page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️")
 
 # Estilo CSS avançado para largura equilibrada (70%) e layout estilo WhatsApp
-st.markdown("""
+st.markdown(
+    """
 <style>
     /* Define uma largura máxima de 70% para os balões de chat */
     .stChatMessage {
@@ -43,13 +44,19 @@ st.markdown("""
         width: 100% !important;
     }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # Título do Chatbot
 st.write("### ⚖️ Assistente Especialista em NBS e Reforma Tributária")
-st.markdown("Consulte códigos de serviços (LC 116/2003), descrições oficiais, equivalências NBS e exemplos práticos.")
+st.markdown(
+    "Consulte códigos de serviços (LC 116/2003), descrições oficiais,"
+    " equivalências NBS e exemplos práticos."
+)
 
-# Função para carregar o Anexo VIII da raiz do projeto e buscar a descrição da LC 116
+
+# Função para carregar o Anexo VIII da raiz do projeto mapeando múltiplos códigos NBS por subitem
 @st.cache_data
 def carregar_base_lc116():
   caminho_excel = "AnexoVIII-CorrelacaoItemNBSIndOpCClassTrib_IBSCBS_V1.00.00.xlsx"
@@ -61,7 +68,6 @@ def carregar_base_lc116():
       # Padroniza os nomes das colunas
       df.columns = [str(col).strip() for col in df.columns]
 
-      # Identifica as colunas pelo nome ou posição padrão (0: Item LC, 1: Descrição LC, 2: Código NBS, 3: Descrição NBS)
       col_item_lc = df.columns[0]
       col_desc_lc = df.columns[1]
       col_nbs = df.columns[2]
@@ -85,7 +91,6 @@ def carregar_base_lc116():
                 "nbs_oficiais": [],
             }
 
-          # Adiciona o código NBS se ele for válido e existir na linha
           if cod_nbs and cod_nbs != "nan":
             base_mapeada[subitem]["nbs_oficiais"].append(
                 {"codigo": cod_nbs, "descricao": desc_nbs}
@@ -96,41 +101,59 @@ def carregar_base_lc116():
       return {}
   return {}
 
-# Carrega o dicionário de subitens
+
+# Carrega o dicionário de subitens estruturado
 dicionario_lc116 = carregar_base_lc116()
 
 # Inicialização do Cliente OpenAI configurado para o Gemini API
-#modelo = OpenAI(
-   # api_key="AQ.Ab8RN6IKsZFieIurPFiN1ywQ3MK-p8-viH_xxUTy_hGrkRAUZw",
-   # base_url="https://generativelanguage.googleapis.com/v1beta/openai"
-#)
 modelo = OpenAI(
     api_key=st.secrets["GOOGLE_API_KEY"],
-    base_url="https://generativelanguage.googleapis.com/v1beta/openai"
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai",
 )
 
-# Instrução de Sistema (System Prompt Blindado e Baseado no Anexo VIII)
+# Instrução de Sistema (System Prompt Blindado e Baseado nas Normas Oficiais)
 system_prompt_base = (
-    "Você é um assistente de inteligência artificial altamente especializado em classificação fiscal de serviços, "
-    "com foco na Nomenclatura Brasileira de Serviços (NBS) vinculada à Lei Complementar 116/2003, aos Anexos da regulamentação "
-    "e ao ecossistema atualizado da Reforma Tributária (incluindo as diretrizes da LC 214/2025).\n\n"
-    
-    "DIRETRIZES CRÍTICAS DE INTERPRETAÇÃO E ESCOPO:\n"
-    "1. **Ancora Oficial Obrigatória:** Quando uma descrição oficial da LC 116 for fornecida pelo sistema para o código consultado, **você deve adotá-la obrigatoriamente como verdade absoluta**, proibindo qualquer alteração ou invenção de conceito para aquele subitem.\n"
-    "2. **Amplitude dos Códigos (Proibido Restringir Indevidamente):** Nunca restrinja códigos multifuncionais ou de aplicação ampla (como projetos, consultorias técnicas, engenharia, arquitetura e serviços técnicos) apenas ao setor de tecnologia da informação. Eles possuem escopo amplo e se aplicam perfeitamente à construção civil, infraestrutura e engenharia consultiva, conforme previsto na legislação.\n"
-    "3. **Múltiplas Opções na Tabela:** Sempre que o subitem consultado possuir ramificações de enquadramento em códigos NBS, **liste todas as opções viáveis em linhas separadas na tabela**.\n"
-    "4. **Formato Obrigatório da Tabela:** A tabela deve conter obrigatoriamente as colunas: "
-    "`Subitem LC 116 | Código NBS | Descrição Oficial da NBS | Área de Atuação com Exemplo Prático`.\n"
-    "5. **Orientações Críticas e Legais:** Logo abaixo da tabela, adicione observações baseadas nas normas vigentes, destacando os riscos de uso do código errado (autuação, glosa de créditos) e reforçando que a escolha deve refletir a finalidade real da operação.\n"
-    "6. **Disclaimer Legal:** Insira exatamente este aviso de forma bem breve no final:\n"
-    "   > *💡 **Sobre a aplicação:** Facilitador de triagem fiscal baseado na LC 116 e regulamentações da Reforma Tributária. Não substitui o seu contador — valorize esse profissional!*\n"
-    "7. **Guarda-Corpo (Foco no Tema):** Se o usuário perguntar sobre assuntos fora do tema fiscal/tributário/Reforma Tributária, recuse educadamente informando que você foi criado exclusivamente para auxiliar com o ecossistema fiscal.\n"
-    "8. **O Coringa do Desenvolvedor:** Se o usuário perguntar quem te criou, quem é seu dono ou te desenvolveu, responda com orgulho que você foi desenvolvido por **Claudio, futuro Engenheiro capixaba de IA**, para otimizar a rotina fiscal e tributária da Reforma Tributária."
+    "Você é um assistente de inteligência artificial altamente especializado"
+    " em classificação fiscal de serviços, com foco na Nomenclatura Brasileira"
+    " de Serviços (NBS) vinculada à Lei Complementar 116/2003, aos Anexos da"
+    " regulamentação e ao ecossistema atualizado da Reforma Tributária"
+    " (incluindo as diretrizes da LC 214/2025).\n\nDIRETRIZES CRÍTICAS DE"
+    " INTERPRETAÇÃO E ESCOPO:\n1. **Ancora Oficial Obrigatória:** Quando uma"
+    " descrição oficial da LC 116 for fornecida pelo sistema para o código"
+    " consultado, **você deve adotá-la obrigatoriamente como verdade"
+    " absoluta**, proibindo qualquer alteração ou invenção de conceito para"
+    " aquele subitem.\n2. **Amplitude dos Códigos (Proibido Restringir"
+    " Indevidamente):** Nunca restrinja códigos multifuncionais ou de"
+    " aplicação ampla (como projetos, consultorias técnicas, engenharia,"
+    " arquitetura e serviços técnicos) apenas ao setor de tecnologia da"
+    " informação. Eles possuem escopo amplo e se aplicam perfeitamente à"
+    " construção civil, infraestrutura e engenharia consultiva, conforme"
+    " previsto na legislação.\n3. **Múltiplas Opções na Tabela:** Sempre que"
+    " o subitem consultado possuir ramificações de enquadramento em códigos"
+    " NBS, **liste todas as opções viáveis em linhas separadas na tabela**.\n4."
+    " **Formato Obrigatório da Tabela:** A tabela deve conter obrigatoriamente"
+    " as colunas: `Subitem LC 116 | Código NBS | Descrição Oficial da NBS |"
+    " Área de Atuação com Exemplo Prático`.\n5. **Orientações Críticas e"
+    " Legais:** Logo abaixo da tabela, adicione observações baseadas nas"
+    " normas vigentes, destacando os riscos de uso do código errado (autuação,"
+    " glosa de créditos) e reforçando que a escolha deve refletir a finalidade"
+    " real da operação.\n6. **Disclaimer Legal:** Insira exatamente este aviso"
+    " de forma bem breve no final:\n   > *💡 **Sobre a aplicação:** Facilitador"
+    " de triagem fiscal baseado na LC 116 e regulamentações da Reforma"
+    " Tributária. Não substitui o seu contador — valorize esse"
+    " profissional!*\n7. **Guarda-Corpo (Foco no Tema):** Se o usuário perguntar"
+    " sobre assuntos fora do tema fiscal/tributário/Reforma Tributária, recuse"
+    " educadamente informando que você foi criado exclusivamente para auxiliar"
+    " com o ecossistema fiscal.\n8. **O Coringa do Desenvolvedor:** Se o"
+    " usuário perguntar quem te criou, quem é seu dono ou te desenvolveu,"
+    " responda com orgulho que você foi desenvolvido por **Claudio, futuro"
+    " Engenheiro capixaba de IA**, para otimizar a rotina fiscal e tributária"
+    " da Reforma Tributária."
 )
 
 # Session State = Memória do Streamlit
 if "lista_mensagens" not in st.session_state:
-    st.session_state["lista_mensagens"] = []
+  st.session_state["lista_mensagens"] = []
 
 # Caminhos para os ícones locais na pasta raiz
 avatar_usuario = "perfil_usuario.png"
@@ -138,55 +161,78 @@ avatar_assistente = "icone_assistente.png"
 
 # Exibir o histórico de mensagens
 for mensagem in st.session_state["lista_mensagens"]:
-    if mensagem["role"] != "system":
-        role = mensagem["role"]
-        content = mensagem["content"]
-        
-        if role == "user":
-            st.chat_message(role, avatar=avatar_usuario).write(content)
-        else:
-            st.chat_message(role, avatar=avatar_assistente).write(content)
+  if mensagem["role"] != "system":
+    role = mensagem["role"]
+    content = mensagem["content"]
+
+    if role == "user":
+      st.chat_message(role, avatar=avatar_usuario).write(content)
+    else:
+      st.chat_message(role, avatar=avatar_assistente).write(content)
 
 # Entrada do usuário
-mensagem_usuario = st.chat_input("Escreva sua dúvida ou código (ex: 17.19)...")
+mensagem_usuario = st.chat_input(
+    "Escreva sua dúvida ou código (ex: 17.02)..."
+)
 
 if mensagem_usuario:
-    # Mostra a mensagem do usuário na tela
-    st.chat_message("user", avatar=avatar_usuario).write(mensagem_usuario)
-    
-    # Processamento Inteligente: Verifica se o texto digitado corresponde a um subitem da LC 116 mapeado no Excel
-    texto_processado = mensagem_usuario.strip()
-    contexto_extraido = ""
-    
-    if texto_processado in dicionario_lc116:
-        descricao_oficial = dicionario_lc116[texto_processado]
-        contexto_extraido = f"\n\n[DADO OFICIAL EXTRAÍDO DO ANEXO VIII] O usuário consultou o subitem '{texto_processado}' da LC 116/2003, cuja descrição oficial exata e imutável é: '{descricao_oficial}'. Utilize estritamente esta definição."
+  # Mostra a mensagem do usuário na tela
+  st.chat_message("user", avatar=avatar_usuario).write(mensagem_usuario)
 
-    # Monta a instrução de sistema dinâmica combinando a base com o contexto extraído (se houver)
-    system_prompt_final = {
-        "role": "system",
-        "content": system_prompt_base + contexto_extraido
-    }
+  # Processamento Inteligente: Verifica se o texto digitado corresponde a um subitem mapeado no Excel
+  texto_processado = mensagem_usuario.strip()
+  contexto_extraido = ""
 
-    novo_usuario_msg = {"role": "user", "content": mensagem_usuario}
-    st.session_state["lista_mensagens"].append(novo_usuario_msg)
+  if texto_processado in dicionario_lc116:
+    dados_subitem = dicionario_lc116[texto_processado]
+    descricao_oficial = dados_subitem["descricao_lc"]
+    lista_nbs = dados_subitem["nbs_oficiais"]
 
-    # Monta a lista completa para enviar para a API
-    mensagens_para_ia = [system_prompt_final] + st.session_state["lista_mensagens"]
+    texto_nbs_formatado = ""
+    for item in lista_nbs:
+      texto_nbs_formatado += (
+          f"- Código NBS: {item['codigo']} | Descrição Oficial da NBS:"
+          f" {item['descricao']}\n"
+      )
 
-    # Resposta da IA
-    try:
-        resposta_modelo = modelo.chat.completions.create(
-            messages=mensagens_para_ia,
-            model="gemini-flash-lite-latest"
-        )
-        
-        resposta_ia = resposta_modelo.choices[0].message.content
+    contexto_extraido = f"""
 
-        # Exibir a resposta da IA na tela
-        st.chat_message("assistant", avatar=avatar_assistente).write(resposta_ia)
-        mensagem_ia = {"role": "assistant", "content": resposta_ia}
-        st.session_state["lista_mensagens"].append(mensagem_ia)
-        
-    except Exception as e:
-        st.error(f"Ocorreu um erro ao consultar a IA: {e}")
+[DADOS OFICIAIS EXTRAÍDOS DOS PORTAIS GOVERNAMENTAIS]
+O usuário consultou o subitem '{texto_processado}' da LC 116/2003.
+- Descrição Oficial LC 116: '{descricao_oficial}'
+- Códigos NBS Oficiais Correspondentes:
+{texto_nbs_formatado}
+
+DIRETRIZ DE REDAÇÃO PARA A IA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura (sem mencionar planilhas internas ou o termo Anexo VIII):
+"Com base no subitem {texto_processado} da LC 116/2003 e nas correspondências oficiais da Nomenclatura Brasileira de Serviços (NBS), apresento abaixo o mapeamento fiscal para enquadramento da operação:"
+
+Em seguida, monte a tabela contendo estritamente os códigos e descrições oficiais listados acima, criando os exemplos práticos de atuação.
+"""
+
+  # Monta a instrução de sistema dinâmica combinando a base com o contexto extraído (se houver)
+  system_prompt_final = {
+      "role": "system",
+      "content": system_prompt_base + contexto_extraido,
+  }
+
+  novo_usuario_msg = {"role": "user", "content": mensagem_usuario}
+  st.session_state["lista_mensagens"].append(novo_usuario_msg)
+
+  # Monta a lista completa para enviar para a API
+  mensagens_para_ia = [system_prompt_final] + st.session_state["lista_mensagens"]
+
+  # Resposta da IA
+  try:
+    resposta_modelo = modelo.chat.completions.create(
+        messages=mensagens_para_ia, model="gemini-2.5-flash"
+    )
+
+    resposta_ia = resposta_modelo.choices[0].message.content
+
+    # Exibir a resposta da IA na tela
+    st.chat_message("assistant", avatar=avatar_assistente).write(resposta_ia)
+    mensagem_ia = {"role": "assistant", "content": resposta_ia}
+    st.session_state["lista_mensagens"].append(mensagem_ia)
+
+  except Exception as e:
+    st.error(f"Ocorreu um erro ao consultar a IA: {e}")
