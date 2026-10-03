@@ -52,19 +52,48 @@ st.markdown("Consulte códigos de serviços (LC 116/2003), descrições oficiais
 # Função para carregar o Anexo VIII da raiz do projeto e buscar a descrição da LC 116
 @st.cache_data
 def carregar_base_lc116():
-    # Substitua pelo nome exato do arquivo que você subiu no GitHub se for diferente
     caminho_excel = "AnexoVIII-CorrelacaoItemNBSIndOpCClassTrib_IBSCBS_V1.00.00.xlsx"
     if os.path.exists(caminho_excel):
         try:
-            # Lendo o Excel (ignorando cabeçalhos genéricos para pegar direto pelas colunas)
-            df = pd.read_excel(caminho_excel, header=None)
-            # Coluna 0 (A) = Subitem LC 116, Coluna 1 (B) = Descrição Oficial
+            # Lê o Excel permitindo que o pandas encontre os dados reais (ignorando cabeçalhos soltos se houver)
+            df = pd.read_excel(caminho_excel)
+            
+            # Normaliza os nomes das colunas para localizar independentemente de maiúsculas/minúsculas
+            df.columns = [str(col).strip().lower() for col in df.columns]
+            
+            # Tenta identificar quais colunas correspondem ao item/subitem e à descrição
+            col_item = None
+            col_desc = None
+            
+            for col in df.columns:
+                if 'item' in col or 'subitem' in col or 'lc' in col:
+                    col_item = col
+                    break
+            
+            for col in df.columns:
+                if 'descri' in col:
+                    col_desc = col
+                    break
+            
             base_mapeada = {}
-            for index, row in df.iterrows():
-                subitem = str(row[0]).strip()
-                descricao = str(row[1]).strip()
-                if subitem and subitem != "nan":
-                    base_mapeada[subitem] = descricao
+            
+            # Se achou pelos nomes das colunas, usa eles; senão, usa a posição padrão (Coluna 0 e Coluna 1)
+            if col_item and col_desc:
+                for _, row in df.iterrows():
+                    subitem = str(row[col_item]).strip()
+                    descricao = str(row[col_desc]).strip()
+                    if subitem and subitem != "nan" and descricao != "nan":
+                        base_mapeada[subitem] = descricao
+            else:
+                # Fallback posicional estrito (ignora as primeiras linhas de cabeçalho se necessário)
+                df_raw = pd.read_excel(caminho_excel, header=None)
+                for _, row in df_raw.iterrows():
+                    subitem = str(row.iloc[0]).strip()
+                    descricao = str(row.iloc[1]).strip()
+                    # Filtra apenas linhas que parecem códigos de subitens válidos (ex: com ponto ou números)
+                    if subitem and subitem != "nan" and ("." in subitem or subitem.isdigit()):
+                        base_mapeada[subitem] = descricao
+                        
             return base_mapeada
         except Exception as e:
             return {}
