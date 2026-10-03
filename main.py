@@ -26,9 +26,9 @@ st.markdown(
         border-radius: 12px !important;
     }
 
-    /* Garante que o cabeçalho principal caiba em linha única sem quebrar */
+    /* Cabeçalho principal ajustado no tamanho ideal para caber em uma linha sem ficar minúsculo */
     .cabecalho-principal {
-        font-size: 1.35rem !important;
+        font-size: 1.58rem !important;
         font-weight: 600;
         margin-bottom: 0.5rem;
         color: inherit;
@@ -74,7 +74,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Cabeçalho visual principal ajustado para uma linha única preservando os termos essenciais
+# Cabeçalho visual principal ajustado para o tamanho perfeito em linha única
 st.markdown(
     '<p class="cabecalho-principal">⚖️ Assistente Especialista em NBS e Reforma'
     " Tributária</p>",
