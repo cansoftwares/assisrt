@@ -8,7 +8,7 @@ st.set_page_config(
     page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️"
 )
 
-# Estilo CSS e Script JavaScript para focar automaticamente no chat input ao abrir o app
+# Estilo CSS e Script JavaScript robusto com tentativas repetidas para garantir o foco no input
 st.markdown(
     """
 <style>
@@ -73,15 +73,29 @@ st.markdown(
 </style>
 
 <script>
-    // Foca automaticamente no campo de texto do chat assim que a página carrega
-    document.addEventListener("DOMContentLoaded", function() {
-        setTimeout(function() {
+    // Função que tenta focar no input repetidamente até que o elemento esteja pronto na DOM
+    function focarChatInput() {
+        const tentativasMaximas = 20;
+        let tentativaAtual = 0;
+        
+        const intervalo = setInterval(function() {
             const chatInput = document.querySelector('[data-testid="stChatInput"] textarea');
             if (chatInput) {
                 chatInput.focus();
+                clearInterval(intervalo);
             }
-        }, 300);
-    });
+            tentativaAtual++;
+            if (tentativaAtual >= tentativasMaximas) {
+                clearInterval(intervalo);
+            }
+        }, 150);
+    }
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        focarChatInput();
+    } else {
+        window.addEventListener('DOMContentLoaded', focarChatInput);
+    }
 </script>
 """,
     unsafe_allow_html=True,
