@@ -3,8 +3,10 @@ import pandas as pd
 import streamlit as st
 from openai import OpenAI
 
-# Configuração da Página do Streamlit
-st.set_page_config(page_title="Tribô - Assistente NBS & Reforma Tributária", page_icon="⚖️️")
+# Configuração da Página e do Título da Aba do Navegador (Conforme o histórico original)
+st.set_page_config(
+    page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️"
+)
 
 # Estilo CSS focado em delimitar a área com bordas refinadas e estilizar os nomes
 st.markdown(
@@ -64,7 +66,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Cabeçalho original mantido limpo e profissional
+# Cabeçalho visual principal da aplicação (Mantido original)
 st.write("### ⚖️ Assistente Especialista em NBS e Reforma Tributária")
 st.markdown(
     "Consulte códigos de serviços (LC 116/2003), descrições oficiais,"
@@ -222,7 +224,7 @@ O usuário consultou o subitem '{texto_processado}' da LC 116/2003.
 - Códigos NBS Oficiais Correspondentes:
 {texto_nbs_formatado}
 
-DIRETRIZ DE REDAÇÃO PARA A IA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial:
+DIRETRIZ DE REDAÇÃO PARA LA IA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial:
 "Com base no subitem {texto_processado} ({descricao_oficial}) da LC 116/2003 e nas correspondências oficiais da Nomenclatura Brasileira de Serviços (NBS), apresento abaixo o mapeamento fiscal para enquadramento da operação:"
 
 Em seguida, monte a tabela contendo estritamente os códigos e descrições oficiais listados acima, criando os exemplos práticos de atuação.
