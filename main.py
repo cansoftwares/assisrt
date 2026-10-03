@@ -3,12 +3,12 @@ import pandas as pd
 import streamlit as st
 from openai import OpenAI
 
-# Configuração da Página e do Título da Aba do Navegador (Conforme o histórico original)
+# Configuração da Página e do Título da Aba do Navegador
 st.set_page_config(
     page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️"
 )
 
-# Estilo CSS focado em delimitar a área com bordas refinadas e estilizar os nomes
+# Estilo CSS focado em delimitar a área com bordas refinadas, estilizar os nomes e o cabeçalho
 st.markdown(
     """
 <style>
@@ -24,6 +24,14 @@ st.markdown(
     /* Estilização refinada para a caixa de input flutuante */
     [data-testid="stChatInput"] {
         border-radius: 12px !important;
+    }
+
+    /* Garante que o cabeçalho principal caiba em linha única sem quebrar */
+    .cabecalho-principal {
+        font-size: 1.35rem !important;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: inherit;
     }
 
     /* Balões de chat ocupando 100% da largura alinhados */
@@ -66,8 +74,12 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Cabeçalho visual principal da aplicação (Mantido original)
-st.write("#### ⚖️ Assistente Especialista em NBS e Reforma Tributária")
+# Cabeçalho visual principal ajustado para uma linha única preservando os termos essenciais
+st.markdown(
+    '<p class="cabecalho-principal">⚖️ Assistente Especialista em NBS e Reforma'
+    " Tributária</p>",
+    unsafe_allow_html=True,
+)
 st.markdown(
     "Consulte códigos de serviços (LC 116/2003), descrições oficiais,"
     " equivalências NBS e exemplos práticos."
@@ -224,7 +236,7 @@ O usuário consultou o subitem '{texto_processado}' da LC 116/2003.
 - Códigos NBS Oficiais Correspondentes:
 {texto_nbs_formatado}
 
-DIRETRIZ DE REDAÇÃO PARA LA IA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial:
+DIRETRIZ DE REDAÇÃO PARA A IA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial:
 "Com base no subitem {texto_processado} ({descricao_oficial}) da LC 116/2003 e nas correspondências oficiais da Nomenclatura Brasileira de Serviços (NBS), apresento abaixo o mapeamento fiscal para enquadramento da operação:"
 
 Em seguida, monte a tabela contendo estritamente os códigos e descrições oficiais listados acima, criando os exemplos práticos de atuação.
