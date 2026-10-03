@@ -49,7 +49,7 @@ st.markdown(
 )
 
 # Título do Chatbot
-st.write("### ⚖️ Assistente Especialista em NBS e Reforma Tributária")
+st.write("### ⚖️️ Assistente Especialista em NBS e Reforma Tributária")
 st.markdown(
     "Consulte códigos de serviços (LC 116/2003), descrições oficiais,"
     " equivalências NBS e exemplos práticos."
@@ -203,7 +203,7 @@ O usuário consultou o subitem '{texto_processado}' da LC 116/2003.
 - Códigos NBS Oficiais Correspondentes:
 {texto_nbs_formatado}
 
-DIRETRIZ DE REDAÇÃO PARA A IA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura (sem mencionar planilhas internas ou o termo Anexo VIII):
+DIRETRIZ DE REDAÇÃO PARA A IA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura:
 "Com base no subitem {texto_processado} da LC 116/2003 e nas correspondências oficiais da Nomenclatura Brasileira de Serviços (NBS), apresento abaixo o mapeamento fiscal para enquadramento da operação:"
 
 Em seguida, monte a tabela contendo estritamente os códigos e descrições oficiais listados acima, criando os exemplos práticos de atuação.
@@ -221,10 +221,10 @@ Em seguida, monte a tabela contendo estritamente os códigos e descrições ofic
   # Monta a lista completa para enviar para a API
   mensagens_para_ia = [system_prompt_final] + st.session_state["lista_mensagens"]
 
-  # Resposta da IA
+  # Resposta da IA com o seu modelo original de preferência
   try:
     resposta_modelo = modelo.chat.completions.create(
-        messages=mensagens_para_ia, model="gemini-2.5-flash"
+        messages=mensagens_para_ia, model="gemini-flash-lite-latest"
     )
 
     resposta_ia = resposta_modelo.choices[0].message.content
