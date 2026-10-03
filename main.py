@@ -4,9 +4,9 @@ import streamlit as st
 from openai import OpenAI
 
 # Configuração da Página do Streamlit
-st.set_page_config(page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️")
+st.set_page_config(page_title="Tribô - Assistente NBS & Reforma Tributária", page_icon="⚖️")
 
-# Estilo CSS focado em delimitar a área com bordas refinadas, mantendo a limpeza nativa
+# Estilo CSS focado em delimitar a área com bordas refinadas e estilizar os nomes
 st.markdown(
     """
 <style>
@@ -65,7 +65,7 @@ st.markdown(
 )
 
 # Título do Chatbot
-st.write("### ⚖️ Assistente Especialista em NBS e Reforma Tributária")
+st.write("### ⚖️ Tribô – Seu assistente na Reforma Tributária")
 st.markdown(
     "Consulte códigos de serviços (LC 116/2003), descrições oficiais,"
     " equivalências NBS e exemplos práticos."
@@ -129,14 +129,14 @@ modelo = OpenAI(
 
 # Instrução de Sistema (System Prompt Blindado e Baseado nas Normas Oficiais)
 system_prompt_base = (
-    "Você é um assistente de inteligência artificial altamente especializado"
-    " em classificação fiscal de serviços, com foco na Nomenclatura Brasileira"
-    " de Serviços (NBS) vinculada à Lei Complementar 116/2003, aos Anexos da"
-    " regulamentação e ao ecossistema atualizado da Reforma Tributária"
-    " (incluindo as diretrizes da LC 214/2025).\n\nDIRETRIZES CRÍTICAS DE"
-    " INTERPRETAÇÃO E ESCOPO:\n1. **Ancora Oficial Obrigatória:** Quando uma"
-    " descrição oficial da LC 116 for fornecida pelo sistema para o código"
-    " consultado, **você deve adotá-la obrigatoriamente como verdade"
+    "Você é o **Tribô**, um assistente de inteligência artificial altamente"
+    " especializado em classificação fiscal de serviços, com foco na"
+    " Nomenclatura Brasileira de Serviços (NBS) vinculada à Lei Complementar"
+    " 116/2003, aos Anexos da regulamentação e ao ecossistema atualizado da"
+    " Reforma Tributária (incluindo as diretrizes da LC 214/2025).\n\nDIRETRIZES"
+    " CRÍTICAS DE INTERPRETAÇÃO E ESCOPO:\n1. **Ancora Oficial Obrigatória:**"
+    " Quando uma descrição oficial da LC 116 for fornecida pelo sistema para o"
+    " código consultado, **você deve adotá-la obrigatoriamente como verdade"
     " absoluta**, proibindo qualquer alteração ou invenção de conceito para"
     " aquele subitem.\n2. **Amplitude dos Códigos (Proibido Restringir"
     " Indevidamente):** Nunca restrinja códigos multifuncionais ou de"
@@ -175,16 +175,18 @@ if "lista_mensagens" not in st.session_state:
 avatar_usuario = "perfil_usuario.png"
 avatar_assistente = "icone_assistente.png"
 
-# Exibir o histórico de mensagens
+# Exibir o histórico de mensagens com os nomes identificados em negrito
 for mensagem in st.session_state["lista_mensagens"]:
   if mensagem["role"] != "system":
     role = mensagem["role"]
     content = mensagem["content"]
 
     if role == "user":
-      st.chat_message(role, avatar=avatar_usuario).write(content)
+      with st.chat_message("user", avatar=avatar_usuario):
+        st.markdown(f"**Você**\n\n{content}")
     else:
-      st.chat_message(role, avatar=avatar_assistente).write(content)
+      with st.chat_message("assistant", avatar=avatar_assistente):
+        st.markdown(f"**Tribô – Seu assistente na Reforma Tributária**\n\n{content}")
 
 # Entrada do usuário
 mensagem_usuario = st.chat_input(
@@ -192,8 +194,9 @@ mensagem_usuario = st.chat_input(
 )
 
 if mensagem_usuario:
-  # Mostra a mensagem do usuário na tela
-  st.chat_message("user", avatar=avatar_usuario).write(mensagem_usuario)
+  # Mostra a mensagem do usuário na tela com o nome em negrito
+  with st.chat_message("user", avatar=avatar_usuario):
+    st.markdown(f"**Você**\n\n{mensagem_usuario}")
 
   # Processamento Inteligente: Verifica se o texto digitado corresponde a um subitem mapeado no Excel
   texto_processado = mensagem_usuario.strip()
@@ -245,8 +248,10 @@ Em seguida, monte a tabela contendo estritamente os códigos e descrições ofic
 
     resposta_ia = resposta_modelo.choices[0].message.content
 
-    # Exibir a resposta da IA na tela
-    st.chat_message("assistant", avatar=avatar_assistente).write(resposta_ia)
+    # Exibir a resposta da IA na tela com o nome do assistente em negrito
+    with st.chat_message("assistant", avatar=avatar_assistente):
+      st.markdown(f"**Tribô – Seu assistente na Reforma Tributária**\n\n{resposta_ia}")
+
     mensagem_ia = {"role": "assistant", "content": resposta_ia}
     st.session_state["lista_mensagens"].append(mensagem_ia)
 
