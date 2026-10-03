@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 from openai import OpenAI
 
 # Configuração da Página e do Título da Aba do Navegador
@@ -8,7 +9,7 @@ st.set_page_config(
     page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️"
 )
 
-# Estilo CSS e Script JavaScript robusto com tentativas repetidas para garantir o foco no input
+# Estilo CSS focado em delimitar a área com bordas refinadas, estilizar os nomes e o cabeçalho
 st.markdown(
     """
 <style>
@@ -71,34 +72,36 @@ st.markdown(
         width: 100% !important;
     }
 </style>
-
-<script>
-    // Função que tenta focar no input repetidamente até que o elemento esteja pronto na DOM
-    function focarChatInput() {
-        const tentativasMaximas = 20;
-        let tentativaAtual = 0;
-        
-        const intervalo = setInterval(function() {
-            const chatInput = document.querySelector('[data-testid="stChatInput"] textarea');
-            if (chatInput) {
-                chatInput.focus();
-                clearInterval(intervalo);
-            }
-            tentativaAtual++;
-            if (tentativaAtual >= tentativasMaximas) {
-                clearInterval(intervalo);
-            }
-        }, 150);
-    }
-
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        focarChatInput();
-    } else {
-        window.addEventListener('DOMContentLoaded', focarChatInput);
-    }
-</script>
 """,
     unsafe_allow_html=True,
+)
+
+# Componente dedicado para forçar o foco no input principal da aplicação
+components.html(
+    """
+    <script>
+        function forcarFocoInput() {
+            // Varre o documento pai (a página principal do Streamlit) buscando o textarea do chat
+            const doc = window.parent.document;
+            const chatInput = doc.querySelector('[data-testid="stChatInput"] textarea');
+            if (chatInput) {
+                chatInput.focus();
+                return true;
+            }
+            return false;
+        }
+
+        // Tenta focar repetidamente nos primeiros segundos após o carregamento
+        let tentativas = 0;
+        const intervalo = setInterval(function() {
+            if (forcarFocoInput() || tentativas > 25) {
+                clearInterval(intervalo);
+            }
+            tentativas++;
+        }, 150);
+    </script>
+""",
+    height=0,
 )
 
 # Cabeçalho visual principal e subtítulo na medida exata de duas linhas elegantes
