@@ -6,12 +6,12 @@ from openai import OpenAI
 # Configuração da Página do Streamlit
 st.set_page_config(page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️")
 
-# Estilo CSS definitivo para unificar o fundo escuro da página inteira e corrigir o input
+# Estilo CSS definitivo para eliminar os fundos brancos e unificar o tema escuro em toda a página
 st.markdown(
     """
 <style>
-    /* Força o fundo escuro em toda a janela do navegador (corpo e HTML) */
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+    /* Força o fundo escuro em todos os containers principais, blocos e margens do Streamlit */
+    .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stMainBlockContainer"], .main {
         background-color: #0b141a !important;
         color: #e9edef !important;
     }
@@ -21,24 +21,29 @@ st.markdown(
         background-color: #111b21 !important;
     }
 
-    /* Remove qualquer fundo branco remanescente no rodapé */
+    /* Remove qualquer fundo branco remanescente no rodapé e blocos inferiores */
     [data-testid="stBottom"], [data-testid="stBottomBlockContainer"] {
         background-color: #0b141a !important;
     }
 
-    /* Caixa de input flutuante integrada ao tema escuro */
+    /* Container externo da caixa de input unificado com o fundo escuro */
     [data-testid="stChatInput"] {
         background-color: #0b141a !important;
         border-top: none !important;
         padding-bottom: 20px;
     }
 
-    /* Área de digitação com fundo harmonizado e texto visível em branco */
-    [data-testid="stChatInput"] textarea {
-        background-color: #2a3942 !important;
-        color: #ffffff !important;
+    /* Caixa interna onde o usuário digita (fundo escuro harmónico e texto visível em branco) */
+    [data-testid="stChatInput"] > div {
+        background-color: #111b21 !important;
         border-radius: 12px !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* Texto digitado pelo utilizador */
+    [data-testid="stChatInput"] textarea {
+        background-color: transparent !important;
+        color: #ffffff !important;
     }
 
     /* Balões de chat ocupando 100% da largura alinhados */
@@ -51,7 +56,7 @@ st.markdown(
         border: 1px solid rgba(255, 255, 255, 0.05);
     }
 
-    /* Mensagem do Usuário (Alinhada à Direita e com cor de destaque do WhatsApp) */
+    /* Mensagem do Utilizador (Alinhada à Direita e com cor de destaque do WhatsApp) */
     [data-testid="stChatMessage-user"] {
         background-color: #005c4b !important; 
         margin-left: auto !important;
@@ -60,7 +65,7 @@ st.markdown(
         color: #ffffff !important;
     }
     
-    /* Inverte a ordem do avatar do usuário para ficar na direita */
+    /* Inverte a ordem do avatar do utilizador para ficar na direita */
     [data-testid="stChatMessage-user"] > div:first-child {
         flex-direction: row-reverse;
     }
