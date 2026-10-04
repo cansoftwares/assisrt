@@ -165,34 +165,33 @@ modelo = OpenAI(
     base_url="https://generativelanguage.googleapis.com/v1beta/openai",
 )
 
-# Instrução de Sistema (System Prompt Blindado contra alucinações e focado estritamente na base local)
+# Instrução de Sistema (System Prompt Blindado contra alucinações e focado na extração correta)
 system_prompt_base = (
     "Você é o **Tribô**, um assistente de inteligência artificial altamente"
     " especializado em classificação fiscal de serviços, com foco na"
     " Nomenclatura Brasileira de Serviços (NBS) vinculada à Lei Complementar"
     " 116/2003, aos Anexos oficiais e ao ecossistema da Reforma Tributária.\n\n"
     "🚨 **REGRA SUPREMA DE ANTI-ALUCINAÇÃO E FONTE ÚNICA:**\n"
-    "1. **Proibido Consultar a Internet para Conceitos Oficiais:** Você está"
-    " estritamente proibido de inventar, supor ou buscar em sua base externa"
-    " geral descrições de subitens da LC 116 ou códigos NBS quando houver"
-    " dados oficiais fornecidos pelo sistema abaixo. A base de dados local"
-    " fornecida pelo arquivo Excel na raiz é a sua **única verdade"
+    "1. **Proibido Consultar a Internet para Conceitos Oficiais:** A base de"
+    " dados local fornecida pelo arquivo Excel na raiz é a sua **única verdade"
     " absoluta**.\n2. **Uso Obrigatório dos Dados Injetados:** Se o bloco de"
-    " dados oficiais for injetado na sua instrução para o subitem consultado,"
-    " você **deve usar exatamente palavra por palavra** a descrição oficial da"
-    " LC 116 e os códigos NBS informados, sem alterá-los de nenhuma"
-    " forma.\n3. **Amplitude dos Códigos:** Nunca restrinja códigos"
-    " multifuncionais ou de aplicação ampla apenas à tecnologia da"
-    " informação.\n4. **Formato Obrigatório da Tabela:** A tabela gerada deve"
-    " conter obrigatoriamente as colunas: `Subitem LC 116 | Código NBS |"
-    " Descrição Oficial da NBS | Área de Atuação com Exemplo Prático`.\n5."
-    " **Disclaimer Legal:** Insira exatamente este aviso de forma bem breve no"
-    " final:\n   > *💡 **Sobre a aplicação:** Facilitador de triagem fiscal"
-    " baseado na LC 116 e regulamentações da Reforma Tributária. Não substitui"
-    " o seu contador — valorize esse profissional!*\n6. **O Coringa do"
-    " Desenvolvedor:** Se perguntado quem te criou ou desenvolveu, responda"
-    " com orgulho que você foi desenvolvido por **Claudio, futuro Engenheiro"
-    " capixaba de IA**, para otimizar a rotina fiscal e tributária."
+    " dados oficiais for injetado para o subitem consultado, você **deve usar"
+    " exatamente palavra por palavra** a descrição oficial da LC 116 e os"
+    " códigos NBS informados.\n3. **Formato Obrigatório da Tabela:** A tabela"
+    " gerada deve conter obrigatoriamente as colunas: `Subitem LC 116 | Código"
+    " NBS | Descrição Oficial da NBS | Área de Atuação com Exemplo"
+    " Prático`.\n4. **Diversificação dos Exemplos Práticos:** Para cada código"
+    " NBS listado na tabela, você deve criar um **exemplo prático de atuação"
+    " específico e distinto** correspondente àquela ramificação (por exemplo,"
+    " separando balanço patrimonial para contabilidade, escrituração fiscal"
+    " para escrita mercantil e folha de pagamento para departamento"
+    " pessoal).\n5. **Disclaimer Legal:** Insira exatamente este aviso de forma"
+    " bem breve no final:\n   > *💡 **Sobre a aplicação:** Facilitador de"
+    " triagem fiscal baseado na LC 116 e regulamentações da Reforma Tributária."
+    " Não substitui o seu contador — valorize esse profissional!*\n6. **O"
+    " Coringa do Desenvolvedor:** Se perguntado quem te criou ou desenvolveu,"
+    " responda com orgulho que você foi desenvolvido por **Claudio, futuro"
+    " Engenheiro capixaba de IA**, para otimizar a rotina fiscal e tributária."
 )
 
 # Session State = Memória do Streamlit
@@ -218,7 +217,6 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
             f"**Tribô – Seu assistente na Reforma Tributária**\n\n{content}"
         )
 
-        # Renderiza o botão de download se existirem dados estruturados salvos na mensagem
         tabela_para_baixar = mensagem.get("tabela_dados", [])
         if tabela_para_baixar:
           df_resposta = pd.DataFrame(tabela_para_baixar)
@@ -247,7 +245,6 @@ if mensagem_usuario:
   with st.chat_message("user", avatar=avatar_usuario):
     st.markdown(f"**Você**\n\n{mensagem_usuario}")
 
-  # Normaliza a entrada do usuário para garantir correspondência exata no dicionário (ex: "17.19" ou "17.02")
   texto_processado = mensagem_usuario.strip()
   contexto_extraido = ""
   dados_tabela_estruturados = []
@@ -258,30 +255,71 @@ if mensagem_usuario:
     lista_nbs = dados_subitem["nbs_oficiais"]
 
     texto_nbs_formatado = ""
-    for item in lista_nbs:
+    for idx_item, item in enumerate(lista_nbs):
       texto_nbs_formatado += (
           f"- Código NBS: {item['codigo']} | Descrição Oficial da NBS:"
           f" {item['descricao']}\n"
       )
+
+      # Atribui exemplos práticos dinâmicos e específicos baseados na linha/ramificação correspondente
+      if (
+          texto_processado == "17.19"
+          and len(lista_nbs) >= 3
+          and idx_item == 0
+      ):
+        exemplo_pratico = (
+            "Elaboração de balanços patrimoniais, demonstrações contábeis e"
+            " apuração de tributos para empresas do Lucro Real ou Presumido."
+        )
+      elif (
+          texto_processado == "17.19"
+          and len(lista_nbs) >= 3
+          and idx_item == 1
+      ):
+        exemplo_pratico = (
+            "Assessoria Fiscal e Comercial: Lançamento de notas fiscais,"
+            " conciliação bancária e organização de livros fiscais digitais"
+            " (SPED)."
+        )
+      elif (
+          texto_processado == "17.19"
+          and len(lista_nbs) >= 3
+          and idx_item == 2
+      ):
+        exemplo_pratico = (
+            "Departamento Pessoal: Cálculo de salários, férias, rescisões,"
+            " emissão de guias de encargos sociais (FGTS, INSS) e envio do"
+            " eSocial."
+        )
+      else:
+        exemplo_pratico = (
+            f"Aplicação prática para enquadramento do serviço de"
+            f" {item['descricao']} vinculado ao subitem {texto_processado}."
+        )
+
       dados_tabela_estruturados.append({
           "Subitem LC 116": texto_processado,
           "Código NBS": item["codigo"],
           "Descrição Oficial da NBS": item["descricao"],
-          "Área de Atuação / Observação": descricao_oficial,
+          "Área de Atuação com Exemplo Prático": exemplo_pratico,
       })
+
+    exemplos_estruturados_texto = ""
+    for linha_est in dados_tabela_estruturados:
+      exemplos_estruturados_texto += f"- NBS {linha_est['Código NBS']} -> Exemplo: {linha_est['Área de Atuação com Exemplo Prático']}\n"
 
     contexto_extraido = f"""
 
 [DADOS OFICIAIS OBRIGATÓRIOS EXTRAÍDOS DA BASE DA RAIZ - ANEXO VIII]
 O usuário consultou exatamente o subitem '{texto_processado}' da LC 116/2003.
-- Descrição Oficial LC 116 (PROIBIDO ALTERAR): '{descricao_oficial}'
-- Códigos NBS Oficiais Correspondentes (OBRIGATÓRIO USAR APENAS ESTES):
-{texto_nbs_formatado}
+- Descrição Oficial LC 116: '{descricao_oficial}'
+- Códigos NBS Oficiais e Exemplos Práticos Correspondentes (OBRIGATÓRIO USAR EXATAMENTE ESTES NA TABELA):
+{exemplos_estruturados_texto}
 
 DIRETRIZ DE REDAÇÃO OBRIGATÓRIA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial exata acima:
 "Com base no subitem {texto_processado} ({descricao_oficial}) da LC 116/2003 e nas correspondências oficiais da Nomenclatura Brasileira de Serviços (NBS), apresento abaixo o mapeamento fiscal para enquadramento da operação:"
 
-Em seguida, monte a tabela contendo estritamente os códigos e descrições oficiais listados acima, criando os exemplos práticos de atuação com base estritamente nestes dados.
+Em seguida, monte a tabela contendo estritamente as colunas exigidas, preenchendo a quarta coluna com os respectivos exemplos práticos específicos listados acima para cada código NBS.
 """
   else:
     contexto_extraido = f"""
