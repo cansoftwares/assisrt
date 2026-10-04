@@ -1,3 +1,4 @@
+import io
 import os
 import pandas as pd
 import streamlit as st
@@ -227,17 +228,24 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
             f"**Tribô – Seu assistente na Reforma Tributária**\n\n{content}"
         )
 
-        # Botão nativo do Streamlit para gerar arquivo CSV/Excel para download imediato da tabela daquela resposta específica
-        # Se a mensagem contiver dados do Excel mapeados, criamos a opção de baixar a tabela exata limpa
+        # Botão nativo para gerar arquivo Excel (.xlsx) nativo com codificação UTF-8 perfeita
         if "tabela_dados" in mensagem and mensagem["tabela_dados"]:
           df_resposta = pd.DataFrame(mensagem["tabela_dados"])
-          csv_data = df_resposta.to_csv(index=False, sep=";", encoding="utf-8-sig")
+
+          # Utiliza um buffer de memória para exportar diretamente para XLSX
+          output = io.BytesIO()
+          with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df_resposta.to_excel(writer, index=False, sheet_name="Enquadramento")
+          excel_data = output.getvalue()
+
           st.download_button(
-              label="📥 Baixar Tabela em CSV (Pronta para o Excel)",
-              data=csv_data,
-              file_name=f"enquadramento_nbs_{idx}.csv",
-              mime="text/csv",
-              key=f"download_{idx}",
+              label="📥 Baixar Planilha em Excel (.xlsx)",
+              data=excel_data,
+              file_name=f"enquadramento_nbs_{idx}.xlsx",
+              mime=(
+                  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              ),
+              key=f"download_xlsx_{idx}",
           )
 
 # Entrada do usuário
@@ -264,7 +272,6 @@ if mensagem_usuario:
           f"- Código NBS: {item['codigo']} | Descrição Oficial da NBS:"
           f" {item['descricao']}\n"
       )
-      # Monta a estrutura para alimentar o CSV/tabela limpa de forma garantida
       dados_tabela_estruturados.append({
           "Subitem LC 116": texto_processado,
           "Código NBS": item["codigo"],
@@ -303,7 +310,6 @@ Em seguida, monte a tabela contendo estritamente os códigos e descrições ofic
 
     resposta_ia = resposta_modelo.choices[0].message.content
 
-    # Salva a mensagem do assistente junto com os dados estruturados da tabela (se houver correspondência exata)
     mensagem_ia = {
         "role": "assistant",
         "content": resposta_ia,
