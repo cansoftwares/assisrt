@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 from openai import OpenAI
 
 # Configuração da Página e do Título da Aba do Navegador
@@ -77,7 +76,7 @@ st.markdown(
 )
 
 # Componente dedicado para forçar o foco no input principal da aplicação
-components.html(
+st.components.v1.html(
     """
     <script>
         function forcarFocoInput() {
@@ -213,7 +212,7 @@ if "lista_mensagens" not in st.session_state:
 avatar_usuario = "perfil_usuario.png"
 avatar_assistente = "icone_assistente.png"
 
-# Exibir o histórico de mensagens com os nomes identificados em negrito apenas nos balões
+# Exibir o histórico de mensagens
 for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
   if mensagem["role"] != "system":
     role = mensagem["role"]
@@ -227,86 +226,19 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
         st.markdown(
             f"**Tribô – Seu assistente na Reforma Tributária**\n\n{content}"
         )
-        # Injeta o botão com script robusto que localiza estritamente a tabela do balão atual
-        components.html(
-            f"""
-            <script>
-                function copiarTabela_{idx}() {{
-                    const doc = window.parent.document;
-                    const btnEl = doc.getElementById('btn_copiar_{idx}');
-                    if (!btnEl) return;
 
-                    // Sobe a árvore a partir do iframe para encontrar o container pai do balão de chat atual
-                    let container = btnEl.closest('[data-testid="stChatMessage-assistant"]');
-                    if (!container) {{
-                        // Fallback caso a estrutura mude: busca o container geral mais próximo
-                        container = btnEl.closest('.element-container') || doc.body;
-                    }}
-                    
-                    const tabela = container.querySelector('table');
-                    if (!tabela) {{
-                        alert('Nenhuma tabela encontrada nesta resposta.');
-                        return;
-                    }}
-
-                    let textoCopia = "";
-                    const linhas = tabela.querySelectorAll('tr');
-                    linhas.forEach(linha => {{
-                        let cols = linha.querySelectorAll('th, td');
-                        let dadosLinha = [];
-                        cols.forEach(col => dadosLinha.push(col.innerText.trim()));
-                        textoCopia += dadosLinha.join('\\t') + '\\n';
-                    }});
-
-                    const textarea = doc.createElement('textarea');
-                    textarea.value = textoCopia;
-                    doc.body.appendChild(textarea);
-                    textarea.select();
-                    try {{
-                        doc.execCommand('copy');
-                        btnEl.innerHTML = '📋 Tabela Copiada com Sucesso!';
-                        btnEl.style.backgroundColor = '#d4edda';
-                        btnEl.style.borderColor = '#c3e6cb';
-                        btnEl.style.color = '#155724';
-                        setTimeout(() => {{
-                            btnEl.innerHTML = '📋 Copiar Tabela para o Excel';
-                            btnEl.style.backgroundColor = '#f8f9fa';
-                            btnEl.style.borderColor = 'rgba(49, 51, 63, 0.2)';
-                            btnEl.style.color = '#31333f';
-                        }}, 2500);
-                    }} catch (err) {{
-                        console.error('Erro ao copiar', err);
-                    }}
-                    doc.body.removeChild(textarea);
-                }}
-            </script>
-            <style>
-                .btn-copiar-tabela {{
-                    background-color: #f8f9fa;
-                    color: #31333f;
-                    border: 1px solid rgba(49, 51, 63, 0.2);
-                    padding: 6px 14px;
-                    border-radius: 8px;
-                    font-size: 0.85rem;
-                    font-weight: 500;
-                    cursor: pointer;
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 6px;
-                    font-family: sans-serif;
-                    transition: all 0.2s ease;
-                }}
-                .btn-copiar-tabela:hover {{
-                    background-color: #f0f2f6;
-                    border-color: rgba(49, 51, 63, 0.4);
-                }}
-            </style>
-            <button id="btn_copiar_{idx}" class="btn-copiar-tabela" onclick="copiarTabela_{idx}()">
-                📋 Copiar Tabela para o Excel
-            </button>
-        """,
-            height=45,
-        )
+        # Botão nativo do Streamlit para gerar arquivo CSV/Excel para download imediato da tabela daquela resposta específica
+        # Se a mensagem contiver dados do Excel mapeados, criamos a opção de baixar a tabela exata limpa
+        if "tabela_dados" in mensagem and mensagem["tabela_dados"]:
+          df_resposta = pd.DataFrame(mensagem["tabela_dados"])
+          csv_data = df_resposta.to_csv(index=False, sep=";", encoding="utf-8-sig")
+          st.download_button(
+              label="📥 Baixar Tabela em CSV (Pronta para o Excel)",
+              data=csv_data,
+              file_name=f"enquadramento_nbs_{idx}.csv",
+              mime="text/csv",
+              key=f"download_{idx}",
+          )
 
 # Entrada do usuário
 mensagem_usuario = st.chat_input(
@@ -319,6 +251,7 @@ if mensagem_usuario:
 
   texto_processado = mensagem_usuario.strip()
   contexto_extraido = ""
+  dados_tabela_estruturados = []
 
   if texto_processado in dicionario_lc116:
     dados_subitem = dicionario_lc116[texto_processado]
@@ -331,6 +264,13 @@ if mensagem_usuario:
           f"- Código NBS: {item['codigo']} | Descrição Oficial da NBS:"
           f" {item['descricao']}\n"
       )
+      # Monta a estrutura para alimentar o CSV/tabela limpa de forma garantida
+      dados_tabela_estruturados.append({
+          "Subitem LC 116": texto_processado,
+          "Código NBS": item["codigo"],
+          "Descrição Oficial da NBS": item["descricao"],
+          "Área de Atuação / Observação": descricao_oficial,
+      })
 
     contexto_extraido = f"""
 
@@ -340,13 +280,13 @@ O usuário consultou o subitem '{texto_processado}' da LC 116/2003.
 - Códigos NBS Oficiais Correspondentes:
 {texto_nbs_formatado}
 
-DIRETRIZ DE REDAÇÃO PARA A IA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial:
+DIRETRIZ DE REDAÇÃO PARA IA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial:
 "Com base no subitem {texto_processado} ({descricao_oficial}) da LC 116/2003 e nas correspondências oficiais da Nomenclatura Brasileira de Serviços (NBS), apresento abaixo o mapeamento fiscal para enquadramento da operação:"
 
 Em seguida, monte a tabela contendo estritamente os códigos e descrições oficiais listados acima, criando os exemplos práticos de atuação.
 """
 
-  system_prompt_final = {
+  system_proxy_final = {
       "role": "system",
       "content": system_prompt_base + contexto_extraido,
   }
@@ -354,7 +294,7 @@ Em seguida, monte a tabela contendo estritamente os códigos e descrições ofic
   novo_usuario_msg = {"role": "user", "content": mensagem_usuario}
   st.session_state["lista_mensagens"].append(novo_usuario_msg)
 
-  mensagens_para_ia = [system_prompt_final] + st.session_state["lista_mensagens"]
+  mensagens_para_ia = [system_proxy_final] + st.session_state["lista_mensagens"]
 
   try:
     resposta_modelo = modelo.chat.completions.create(
@@ -363,7 +303,12 @@ Em seguida, monte a tabela contendo estritamente os códigos e descrições ofic
 
     resposta_ia = resposta_modelo.choices[0].message.content
 
-    mensagem_ia = {"role": "assistant", "content": resposta_ia}
+    # Salva a mensagem do assistente junto com os dados estruturados da tabela (se houver correspondência exata)
+    mensagem_ia = {
+        "role": "assistant",
+        "content": resposta_ia,
+        "tabela_dados": dados_tabela_estruturados,
+    }
     st.session_state["lista_mensagens"].append(mensagem_ia)
     st.rerun()
 
