@@ -227,18 +227,27 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
         st.markdown(
             f"**Tribô – Seu assistente na Reforma Tributária**\n\n{content}"
         )
-        # Injeta o botão com script compatível com o contexto do Streamlit (execCommand no documento pai)
+        # Injeta o botão com script robusto que localiza estritamente a tabela do balão atual
         components.html(
             f"""
             <script>
                 function copiarTabela_{idx}() {{
                     const doc = window.parent.document;
-                    const chats = doc.querySelectorAll('[data-testid="stChatMessage-assistant"]');
-                    const meuChat = chats[{idx // 2}]; 
-                    if (!meuChat) return;
+                    const btnEl = doc.getElementById('btn_copiar_{idx}');
+                    if (!btnEl) return;
+
+                    // Sobe a árvore a partir do iframe para encontrar o container pai do balão de chat atual
+                    let container = btnEl.closest('[data-testid="stChatMessage-assistant"]');
+                    if (!container) {{
+                        // Fallback caso a estrutura mude: busca o container geral mais próximo
+                        container = btnEl.closest('.element-container') || doc.body;
+                    }}
                     
-                    const tabela = meuChat.querySelector('table');
-                    if (!tabela) return;
+                    const tabela = container.querySelector('table');
+                    if (!tabela) {{
+                        alert('Nenhuma tabela encontrada nesta resposta.');
+                        return;
+                    }}
 
                     let textoCopia = "";
                     const linhas = tabela.querySelectorAll('tr');
@@ -249,26 +258,22 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                         textoCopia += dadosLinha.join('\\t') + '\\n';
                     }});
 
-                    // Cria um elemento textarea temporário na página principal para realizar a cópia universal
                     const textarea = doc.createElement('textarea');
                     textarea.value = textoCopia;
                     doc.body.appendChild(textarea);
                     textarea.select();
                     try {{
                         doc.execCommand('copy');
-                        const btn = document.getElementById('btn_copiar_{idx}');
-                        if (btn) {{
-                            btn.innerHTML = '📋 Tabela Copiada com Sucesso!';
-                            btn.style.backgroundColor = '#d4edda';
-                            btn.style.borderColor = '#c3e6cb';
-                            btn.style.color = '#155724';
-                            setTimeout(() => {{
-                                btn.innerHTML = '📋 Copiar Tabela para o Excel';
-                                btn.style.backgroundColor = '#f8f9fa';
-                                btn.style.borderColor = 'rgba(49, 51, 63, 0.2)';
-                                btn.style.color = '#31333f';
-                            }}, 2500);
-                        }}
+                        btnEl.innerHTML = '📋 Tabela Copiada com Sucesso!';
+                        btnEl.style.backgroundColor = '#d4edda';
+                        btnEl.style.borderColor = '#c3e6cb';
+                        btnEl.style.color = '#155724';
+                        setTimeout(() => {{
+                            btnEl.innerHTML = '📋 Copiar Tabela para o Excel';
+                            btnEl.style.backgroundColor = '#f8f9fa';
+                            btnEl.style.borderColor = 'rgba(49, 51, 63, 0.2)';
+                            btnEl.style.color = '#31333f';
+                        }}, 2500);
                     }} catch (err) {{
                         console.error('Erro ao copiar', err);
                     }}
