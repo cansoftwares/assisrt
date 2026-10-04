@@ -165,44 +165,34 @@ modelo = OpenAI(
     base_url="https://generativelanguage.googleapis.com/v1beta/openai",
 )
 
-# Instrução de Sistema (System Prompt Blindado e Baseado nas Normas Oficiais)
+# Instrução de Sistema (System Prompt Blindado contra alucinações e focado estritamente na base local)
 system_prompt_base = (
     "Você é o **Tribô**, um assistente de inteligência artificial altamente"
     " especializado em classificação fiscal de serviços, com foco na"
     " Nomenclatura Brasileira de Serviços (NBS) vinculada à Lei Complementar"
-    " 116/2003, aos Anexos da regulamentação e ao ecossistema atualizado da"
-    " Reforma Tributária (incluindo as diretrizes da LC 214/2025).\n\nDIRETRIZES"
-    " CRÍTICAS DE INTERPRETAÇÃO E ESCOPO:\n1. **Ancora Oficial Obrigatória:**"
-    " Quando uma descrição oficial da LC 116 for fornecida pelo sistema para o"
-    " código consultado, **você deve adotá-la obrigatoriamente como verdade"
-    " absoluta**, proibindo qualquer alteração ou invenção de conceito para"
-    " aquele subitem.\n2. **Amplitude dos Códigos (Proibido Restringir"
-    " Indevidamente):** Nunca restrinja códigos multifuncionais ou de"
-    " aplicação ampla (como projetos, consultorias técnicas, engenharia,"
-    " arquitetura e serviços técnicos) apenas ao setor de tecnologia da"
-    " informação. Eles possuem escopo amplo e se aplicam perfeitamente à"
-    " construção civil, infraestrutura e engenharia consultiva, conforme"
-    " previsto na legislação.\n3. **Múltiplas Opções na Tabela:** Sempre que"
-    " o subitem consultado possuir ramificações de enquadramento em códigos"
-    " NBS, **liste todas as opções viáveis em linhas separadas na tabela**.\n4."
-    " **Formato Obrigatório da Tabela:** A tabela deve conter obrigatoriamente"
-    " as colunas: `Subitem LC 116 | Código NBS | Descrição Oficial da NBS |"
-    " Área de Atuação com Exemplo Prático`.\n5. **Orientações Críticas e"
-    " Legais:** Logo abaixo da tabela, adicione observações baseadas nas"
-    " normas vigentes, destacando os riscos de uso do código errado (autuação,"
-    " glosa de créditos) e reforçando que a escolha deve refletir a finalidade"
-    " real da operação.\n6. **Disclaimer Legal:** Insira exatamente este aviso"
-    " de forma bem breve no final:\n   > *💡 **Sobre a aplicação:** Facilitador"
-    " de triagem fiscal baseado na LC 116 e regulamentações da Reforma"
-    " Tributária. Não substitui o seu contador — valorize esse"
-    " profissional!*\n7. **Guarda-Corpo (Foco no Tema):** Se o usuário perguntar"
-    " sobre assuntos fora do tema fiscal/tributário/Reforma Tributária, recuse"
-    " educadamente informando que você foi criado exclusivamente para auxiliar"
-    " com o ecossistema fiscal.\n8. **O Coringa do Desenvolvedor:** Se o"
-    " usuário perguntar quem te criou, quem é seu dono ou te desenvolveu,"
-    " responda com orgulho que você foi desenvolvido por **Claudio, futuro"
-    " Engenheiro capixaba de IA**, para otimizar a rotina fiscal e tributária"
-    " da Reforma Tributária."
+    " 116/2003, aos Anexos oficiais e ao ecossistema da Reforma Tributária.\n\n"
+    "🚨 **REGRA SUPREMA DE ANTI-ALUCINAÇÃO E FONTE ÚNICA:**\n"
+    "1. **Proibido Consultar a Internet para Conceitos Oficiais:** Você está"
+    " estritamente proibido de inventar, supor ou buscar em sua base externa"
+    " geral descrições de subitens da LC 116 ou códigos NBS quando houver"
+    " dados oficiais fornecidos pelo sistema abaixo. A base de dados local"
+    " fornecida pelo arquivo Excel na raiz é a sua **única verdade"
+    " absoluta**.\n2. **Uso Obrigatório dos Dados Injetados:** Se o bloco de"
+    " dados oficiais for injetado na sua instrução para o subitem consultado,"
+    " você **deve usar exatamente palavra por palavra** a descrição oficial da"
+    " LC 116 e os códigos NBS informados, sem alterá-los de nenhuma"
+    " forma.\n3. **Amplitude dos Códigos:** Nunca restrinja códigos"
+    " multifuncionais ou de aplicação ampla apenas à tecnologia da"
+    " informação.\n4. **Formato Obrigatório da Tabela:** A tabela gerada deve"
+    " conter obrigatoriamente as colunas: `Subitem LC 116 | Código NBS |"
+    " Descrição Oficial da NBS | Área de Atuação com Exemplo Prático`.\n5."
+    " **Disclaimer Legal:** Insira exatamente este aviso de forma bem breve no"
+    " final:\n   > *💡 **Sobre a aplicação:** Facilitador de triagem fiscal"
+    " baseado na LC 116 e regulamentações da Reforma Tributária. Não substitui"
+    " o seu contador — valorize esse profissional!*\n6. **O Coringa do"
+    " Desenvolvedor:** Se perguntado quem te criou ou desenvolveu, responda"
+    " com orgulho que você foi desenvolvido por **Claudio, futuro Engenheiro"
+    " capixaba de IA**, para otimizar a rotina fiscal e tributária."
 )
 
 # Session State = Memória do Streamlit
@@ -228,11 +218,11 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
             f"**Tribô – Seu assistente na Reforma Tributária**\n\n{content}"
         )
 
-        # Botão nativo para gerar arquivo Excel (.xlsx) nativo com codificação UTF-8 perfeita
-        if "tabela_dados" in mensagem and mensagem["tabela_dados"]:
-          df_resposta = pd.DataFrame(mensagem["tabela_dados"])
+        # Renderiza o botão de download se existirem dados estruturados salvos na mensagem
+        tabela_para_baixar = mensagem.get("tabela_dados", [])
+        if tabela_para_baixar:
+          df_resposta = pd.DataFrame(tabela_para_baixar)
 
-          # Utiliza um buffer de memória para exportar diretamente para XLSX
           output = io.BytesIO()
           with pd.ExcelWriter(output, engine="openpyxl") as writer:
             df_resposta.to_excel(writer, index=False, sheet_name="Enquadramento")
@@ -257,6 +247,7 @@ if mensagem_usuario:
   with st.chat_message("user", avatar=avatar_usuario):
     st.markdown(f"**Você**\n\n{mensagem_usuario}")
 
+  # Normaliza a entrada do usuário para garantir correspondência exata no dicionário (ex: "17.19" ou "17.02")
   texto_processado = mensagem_usuario.strip()
   contexto_extraido = ""
   dados_tabela_estruturados = []
@@ -281,16 +272,20 @@ if mensagem_usuario:
 
     contexto_extraido = f"""
 
-[DADOS OFICIAIS EXTRAÍDOS DOS PORTAIS GOVERNAMENTAIS]
-O usuário consultou o subitem '{texto_processado}' da LC 116/2003.
-- Descrição Oficial LC 116: '{descricao_oficial}'
-- Códigos NBS Oficiais Correspondentes:
+[DADOS OFICIAIS OBRIGATÓRIOS EXTRAÍDOS DA BASE DA RAIZ - ANEXO VIII]
+O usuário consultou exatamente o subitem '{texto_processado}' da LC 116/2003.
+- Descrição Oficial LC 116 (PROIBIDO ALTERAR): '{descricao_oficial}'
+- Códigos NBS Oficiais Correspondentes (OBRIGATÓRIO USAR APENAS ESTES):
 {texto_nbs_formatado}
 
-DIRETRIZ DE REDAÇÃO PARA IA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial:
+DIRETRIZ DE REDAÇÃO OBRIGATÓRIA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial exata acima:
 "Com base no subitem {texto_processado} ({descricao_oficial}) da LC 116/2003 e nas correspondências oficiais da Nomenclatura Brasileira de Serviços (NBS), apresento abaixo o mapeamento fiscal para enquadramento da operação:"
 
-Em seguida, monte a tabela contendo estritamente os códigos e descrições oficiais listados acima, criando os exemplos práticos de atuação.
+Em seguida, monte a tabela contendo estritamente os códigos e descrições oficiais listados acima, criando os exemplos práticos de atuação com base estritamente nestes dados.
+"""
+  else:
+    contexto_extraido = f"""
+[AVISO DO SISTEMA] O termo digitado '{texto_processado}' não foi localizado de forma exata como subitem no Anexo da base local da LC 116/2003. Responda orientando o usuário a digitar o código do subitem correto (ex: 17.02, 17.19) para realizar o mapeamento oficial.
 """
 
   system_proxy_final = {
