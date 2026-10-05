@@ -194,7 +194,7 @@ for subitem_k, info_v in dicionario_lc116.items():
         f" {nbs_item['descricao']}\n"
     )
 
-# Instrução de Sistema atualizada com a diretriz para incluir o parágrafo de valorização profissional e técnica após a tabela
+# Instrução de Sistema atualizada com o parágrafo humano, direto e a valorização do contador
 system_prompt_base = (
     "Você é o **Tribô**, um assistente de inteligência artificial altamente"
     " especializado em classificação fiscal de serviços, com foco na"
@@ -217,20 +217,21 @@ system_prompt_base = (
     " da coluna 'Descrição NBS'. Enquanto a 'Descrição NBS' traz o texto"
     " normativo oficial, a coluna de **Exemplo Prático** deve descrever um"
     " **caso real de mercado ou operação empresarial concreta** que se encaixe"
-    " naquele código (ex: se a descrição for 'serviços de reservas...', o"
-    " exemplo prático deve ser: 'Agência de turismo realizando reservas de"
-    " auditórios para congressos corporativos').\n"
-    "4. **Estrutura Obrigatória Pós-Tabela:** Logo abaixo da tabela em"
-    " Markdown, inclua obrigatoriamente um parágrafo analítico destacando a"
-    " importância técnica de selecionar o código NBS mais específico para a"
-    " correta apuração dos novos tributos (IBS e CBS), ressaltando o objetivo"
-    " estratégico da aplicação como ferramenta de apoio de alto nível e"
-    " concluindo com a valorização essencial do profissional contábil na"
-    " validação e segurança das operações.\n"
+    " naquele código.\n"
+    "4. **Estrutura Obrigatória Pós-Tabela (Tom Humano e Direto):** Logo abaixo"
+    " da tabela em Markdown, inclua obrigatoriamente o seguinte parágrafo"
+    " (com a formatação exata): \n"
+    "   *Importante*: A seleção precisa do código NBS é de suma importância"
+    " na Reforma Tributária. A correta classificação fiscal garante a"
+    " aplicação adequada das regras de incidência, não cumulatividade e"
+    " eventuais alíquotas diferenciadas, mitigando riscos de bitributação ou"
+    " autuações fiscais. Esta ferramenta atua como um suporte estratégico e"
+    " inteligente de alto nível, mas não tem o objetivo de substituir seu"
+    " contador — **Valorize esse profissional!**\n"
     "5. **Formato Duplo Obrigatório da Resposta:** Retorne sua resposta"
     " estruturada em **duas partes estritas**:\n"
     "   - **PARTE 1:** O texto introdutório, a tabela Markdown e o parágrafo"
-    " analítico/valorização do contador.\n"
+    " humano de valorização do contador.\n"
     "   - **PARTE 2:** Um bloco de código JSON isolado contendo"
     " exatamente a lista estruturada com os dados correspondentes, usando a"
     " seguinte chave exata:\n"
@@ -323,13 +324,13 @@ if mensagem_usuario:
     instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou diretamente ou indiretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
-Gere a resposta apresentando a tabela com os códigos NBS oficiais correspondentes a este subitem, crie exemplos práticos reais de mercado e adicione o parágrafo analítico de valorização da contabilidade logo abaixo da tabela.
+Gere a resposta apresentando a tabela com os códigos NBS oficiais, crie exemplos práticos reais e insira o parágrafo humano com a frase de valorização do contador logo abaixo da tabela.
 """
   else:
     instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador fez uma consulta em linguagem natural: '{texto_processado}'.
-Analise a Tabela de Referência Oficial fornecida acima, identifique o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados para responder com precisão à dúvida do usuário. Apresente a tabela correspondente, os exemplos práticos reais e finalize com o parágrafo analítico de valorização do profissional contábil. Se o texto for completamente fora do tema de tributação ou LC 116, aplique a diretriz de recusa educada.
+Analise a Tabela de Referência Oficial fornecida acima, identifique o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados para responder com precisão à dúvida do usuário. Apresente a tabela correspondente, os exemplos práticos reais e finalize o corpo da resposta com o parágrafo humano de valorização do contador. Se o texto for completamente fora do tema de tributação ou LC 116, aplique a diretriz de recusa educada.
 """
 
   system_proxy_final = {
