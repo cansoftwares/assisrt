@@ -3,6 +3,7 @@ import json
 import os
 import pandas as pd
 import streamlit as st
+from openpyxl.styles import Alignment, Font
 from openai import OpenAI
 
 # Configuração da Página e do Título da Aba do Navegador
@@ -285,9 +286,41 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
           df_resposta.to_excel(writer, index=False, sheet_name="Enquadramento")
+
+          # Estilização avançada do Excel (larguras, alinhamentos e cabeçalho em negrito)
+          workbook = writer.book
+          worksheet = writer.sheets["Enquadramento"]
+
+          # Larguras personalizadas solicitadas: A=14, B=12, C=40, D=60
+          colunas_larguras = {"A": 14, "B": 12, "C": 40, "D": 60}
+          for coluna, largura in colunas_larguras.items():
+            worksheet.column_dimensions[coluna].width = largura
+
+          # Alinhamentos e fontes personalizados
+          for row_idx, row in enumerate(worksheet.iter_rows(min_row=1), start=1):
+            for col_idx, cell in enumerate(row, start=1):
+              if row_idx == 1:
+                # Cabeçalho da linha 1 em negrito e centralizado
+                cell.font = Font(bold=True)
+                cell.alignment = Alignment(
+                    horizontal="center", vertical="center", wrap_text=True
+                )
+              else:
+                # Linhas de dados conforme regras solicitadas
+                if col_idx in [1, 2]:
+                  # Colunas A e B: Centralizadas
+                  cell.alignment = Alignment(
+                      horizontal="center", vertical="top", wrap_text=True
+                  )
+                else:
+                  # Colunas C e D: Alinhadas à esquerda (padrão) com quebra de linha
+                  cell.alignment = Alignment(
+                      horizontal="left", vertical="top", wrap_text=True
+                  )
+
         excel_data = output.getvalue()
 
-        # Nome profissional atualizado conforme solicitado
+        # Nome profissional do relatório em Excel
         subitem_referencia = mensagem.get("subitem_ref", "Geral")
         nome_arquivo_excel = (
             f"Relatorio_NBS_Inteligente_-_Subitem_{subitem_referencia}.xlsx"
