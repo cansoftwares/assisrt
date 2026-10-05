@@ -194,7 +194,7 @@ for subitem_k, info_v in dicionario_lc116.items():
         f" {nbs_item['descricao']}\n"
     )
 
-# Instrução de Sistema atualizada com o parágrafo humano, direto e a valorização do contador
+# Instrução de Sistema atualizada sem menções a partes visíveis
 system_prompt_base = (
     "Você é o **Tribô**, um assistente de inteligência artificial altamente"
     " especializado em classificação fiscal de serviços, com foco na"
@@ -218,9 +218,9 @@ system_prompt_base = (
     " normativo oficial, a coluna de **Exemplo Prático** deve descrever um"
     " **caso real de mercado ou operação empresarial concreta** que se encaixe"
     " naquele código.\n"
-    "4. **Estrutura Obrigatória Pós-Tabela (Tom Humano e Direto):** Logo abaixo"
-    " da tabela em Markdown, inclua obrigatoriamente o seguinte parágrafo"
-    " (com a formatação exata): \n"
+    "4. **Estrutura Obrigatória da Resposta:** Apresente o texto introdutório,"
+    " a tabela Markdown e, logo abaixo dela, inclua obrigatoriamente o seguinte"
+    " parágrafo exato: \n"
     "   *Importante*: A seleção precisa do código NBS é de suma importância"
     " na Reforma Tributária. A correta classificação fiscal garante a"
     " aplicação adequada das regras de incidência, não cumulatividade e"
@@ -228,13 +228,10 @@ system_prompt_base = (
     " autuações fiscais. Esta ferramenta atua como um suporte estratégico e"
     " inteligente de alto nível, mas não tem o objetivo de substituir seu"
     " contador — **Valorize esse profissional!**\n"
-    "5. **Formato Duplo Obrigatório da Resposta:** Retorne sua resposta"
-    " estruturada em **duas partes estritas**:\n"
-    "   - **PARTE 1:** O texto introdutório, a tabela Markdown e o parágrafo"
-    " humano de valorização do contador.\n"
-    "   - **PARTE 2:** Um bloco de código JSON isolado contendo"
-    " exatamente a lista estruturada com os dados correspondentes, usando a"
-    " seguinte chave exata:\n"
+    "5. **Formato Técnico Oculto:** Forneça a resposta em texto corrido e"
+    " formatado para leitura no chat, e ao final insira obrigatoriamente um"
+    " bloco de código JSON isolado contendo a lista estruturada exata com a"
+    " chave seguinte: \n"
     '     `{"dados_tabela": [{"subitem": "...", "codigo_nbs": "...",'
     ' "descricao_nbs": "...", "exemplo_pratico": "..."}, ...]}`\n'
     "6. **Disclaimer Legal:** Insira o aviso de rodapé padrão no final (sem"
@@ -324,13 +321,13 @@ if mensagem_usuario:
     instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou diretamente ou indiretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
-Gere a resposta apresentando a tabela com os códigos NBS oficiais, crie exemplos práticos reais e insira o parágrafo humano com a frase de valorização do contador logo abaixo da tabela.
+Gere a resposta apresentando a tabela com os códigos NBS oficiais, crie exemplos práticos reais, insira o parágrafo humano com a frase de valorização do contador e entregue o bloco JSON oculto para o Excel.
 """
   else:
     instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador fez uma consulta em linguagem natural: '{texto_processado}'.
-Analise a Tabela de Referência Oficial fornecida acima, identifique o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados para responder com precisão à dúvida do usuário. Apresente a tabela correspondente, os exemplos práticos reais e finalize o corpo da resposta com o parágrafo humano de valorização do contador. Se o texto for completamente fora do tema de tributação ou LC 116, aplique a diretriz de recusa educada.
+Analise a Tabela de Referência Oficial fornecida acima, identifique o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados para responder com precisão à dúvida do usuário. Apresente a tabela correspondente, os exemplos práticos reais, finalize com o parágrafo humano de valorização do contador e forneça o bloco JSON oculto. Se o texto for completamente fora do tema de tributação ou LC 116, aplique a diretriz de recusa educada.
 """
 
   system_proxy_final = {
