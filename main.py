@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import pandas as pd
 import streamlit as st
@@ -174,28 +175,27 @@ system_prompt_base = (
     " Nomenclatura Brasileira de Serviços (NBS) vinculada à Lei"
     " Complementar 116/2003, aos Anexos oficiais e ao ecossistema da Reforma"
     " Tributária.\n\n"
-    "🚨 **REGRA SUPREMA DE ANTI-ALUCINAÇÃO E ISOLAMENTO DE CONSULTA:**\n"
+    "🚨 **REGRA SUPREMA DE ANTI-ALUCINAÇÃO E SINCRONIZAÇÃO:**\n"
     "1. **Proibido Consultar a Internet para Conceitos Oficiais:** A base"
     " de dados local fornecida pelo arquivo Excel na raiz é a sua **única"
     " verdade absoluta**.\n2. **Uso Exclusivo do Subitem Atual:** Cada consulta"
     " do usuário é totalmente independente. **Ignore completamente** os"
-    " exemplos ou tabelas de mensagens anteriores do chat ao gerar a resposta"
-    " atual.\n3. **Rigor Técnico Absoluto nos Exemplos Práticos:** A coluna de"
-    " exemplo prático DEVE refletir estritamente a atividade descrita no código"
-    " NBS correspondente. É terminantemente proibido inserir termos genéricos"
-    " (como 'suporte operacional' ou 'consultoria analítica') para códigos"
-    " que tratam de locação, infraestrutura, cessão de direitos, obras ou"
-    " atividades específicas.\n4. **Formato Obrigatório da Tabela:** A tabela"
-    " gerada deve conter obrigatoriamente as quatro colunas exatas: `Subitem LC"
-    " 116 | Código NBS | Descrição Oficial da NBS | Área de Atuação com Exemplo"
-    " Prático`.\n5. **Disclaimer Legal:** Insira exatamente este aviso de forma"
-    " bem breve no final:\n   > *💡 **Sobre a aplicação:** Facilitador de"
-    " triagem fiscal baseado na LC 116 e regulamentações da Reforma Tributária."
-    " Não substitui o seu contador — valorize esse profissional!*\n6. **O"
-    " Coringa do Desenvolvedor:** Se perguntado quem te criou ou"
-    " desenvolveu, responda com orgulho que você foi desenvolvido por"
-    " **Claudio, futuro Engenheiro capixaba de IA**, para otimizar a rotina"
-    " fiscal e tributária."
+    " exemplos ou tabelas de mensagens anteriores do chat.\n3. **Rigor Técnico"
+    " Absoluto nos Exemplos Práticos:** A coluna de exemplo prático DEVE"
+    " refletir estritamente a atividade descrita no código NBS correspondente."
+    " É terminantemente proibido inserir termos genéricos ou desconectados.\n4."
+    " **Formato Duplo Obrigatório da Resposta:** Você deve retornar a sua"
+    " resposta estruturada em **duas partes estritas**:\n   - **PARTE 1:** O"
+    " texto de introdução amigável e a tabela Markdown legível para visualização"
+    " no chat.\n   - **PARTE 2:** Um bloco de código JSON isolado contendo"
+    " exatamente a lista estruturada com os dados idênticos aos da tabela,"
+    " usando a seguinte chave exata:\n"
+    '     `{"dados_tabela": [{"subitem": "...", "codigo_nbs": "...",'
+    ' "descricao_nbs": "...", "exemplo_pratico": "..."}, ...]}`\n5. **Disclaimer'
+    " Legal:** Insira o aviso de rodapé padrão no final.\n6. **O Coringa do"
+    " Desenvolvedor:** Se perguntado quem te criou ou desenvolveu, responda"
+    " com orgulho que você foi desenvolvido por **Claudio, futuro Engenheiro"
+    " capixaba de IA**."
 )
 
 # Session State = Memória do Streamlit
@@ -272,38 +272,27 @@ if mensagem_usuario:
       )
 
     contexto_extraido = f"""
-
 [DADOS OFICIAIS OBRIGATÓRIOS EXCLUSIVOS DA CONSULTA ATUAL - ANEXO VIII]
-O usuário consultou nesta mensagem o subitem '{texto_processado}' da LC 116/2003. 
-ATENÇÃO: Trate esta consulta como um evento único e isolado. Não reutilize dados, tabelas ou exemplos de interações anteriores do histórico.
+O usuário consultou nesta mensagem o subitem '{texto_processado}' da LC 116/2003.
 - Descrição Oficial LC 116: '{descricao_oficial}'
 - Códigos NBS Oficiais associados a este Subitem:
 {texto_nbs_formatado}
 
-DIRETRIZ DE REDAÇÃO OBRIGATÓRIA PARA A COLUNA 4 ('Área de Atuação com Exemplo Prático'):
-Para cada código NBS listado acima, você (IA) DEVE criar um exemplo prático de negócio totalmente fiel e contextualizado à respectiva "Descrição Oficial da NBS". 
-- Se a NBS tratar de locação, arrendamento ou direito de passagem de infraestrutura (ex: rodovias, cabos, dutos), o exemplo DEVE ilustrar essa exata operação de infraestrutura (ex: "Infraestrutura de Transporte: Cessão onerosa de direito de uso de faixa de domínio em rodovia para passagem de fibra óptica").
-- Se a NBS tratar de consultoria, o exemplo DEVE refletir consultoria.
-- NUNCA repita a descrição oficial como um eco redundante e NUNCA utilize termos genéricos desconectados do texto da NBS.
-
-DIRETRIZ DE ESTRUTURA DA RESPOSTA:
-1. Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial exata acima:
-"Com base no subitem {texto_processado} ({descricao_oficial}) da LC 116/2003 e nas correspondências oficiais da Nomenclatura Brasileira de Serviços (NBS), apresento abaixo o mapeamento fiscal para enquadramento da operação:"
-
-2. Em seguida, monte a tabela Markdown contendo exatamente quatro colunas: `Subitem LC 116 | Código NBS | Descrição Oficial da NBS | Área de Atuação com Exemplo Prático`.
+DIRETRIZ DE GERAÇÃO:
+1. Apresente o texto introdutório oficial: "Com base no subitem {texto_processado} ({descricao_oficial}) da LC 116/2003 e nas correspondências oficiais da Nomenclatura Brasileira de Serviços (NBS), apresento abaixo o mapeamento fiscal para enquadramento da operação:"
+2. Insira a tabela Markdown com as colunas: `Subitem LC 116 | Código NBS | Descrição Oficial da NBS | Área de Atuação com Exemplo Prático`.
+3. Logo abaixo da tabela, inclua obrigatoriamente um bloco de código JSON contendo a chave `"dados_tabela"` com a lista exata dos itens mapeados e seus respectivos exemplos práticos detalhados, para que o sistema consiga sincronizar perfeitamente o download em Excel.
 """
   else:
     contexto_extraido = f"""
-[AVISO DO SISTEMA] O termo digitado '{texto_processado}' não foi localizado de forma exata como subitem no Anexo da base local da LC 116/2003. Responda orientando o utilizador de forma educada e profissional a digitar o código do subitem correto (ex: 17.02, 17.19) para realizar o mapeamento oficial, sem mencionar termos técnicos internos de sistema.
+[AVISO DO SISTEMA] O termo digitado '{texto_processado}' não foi localizado de forma exata como subitem no Anexo da base local da LC 116/2003. Responda orientando o utilizador de forma educada e profissional a digitar o código do subitem correto.
 """
 
-  # Criar a mensagem de sistema dinâmica apenas para o envio à OpenAI (invisível ao utilizador)
   system_proxy_final = {
       "role": "system",
       "content": system_prompt_base + contexto_extraido,
   }
 
-  # Montar o histórico completo filtrando apenas as mensagens de chat públicas (user e assistant)
   historico_chat = [
       m
       for m in st.session_state["lista_mensagens"]
@@ -318,23 +307,49 @@ DIRETRIZ DE ESTRUTURA DA RESPOSTA:
 
     resposta_ia = resposta_modelo.choices[0].message.content
 
-    # Preencher a estrutura para o botão de download em Excel com base na resposta ou mapeamento
-    for item in dicionario_lc116.get(texto_processado, {}).get(
-        "nbs_oficiais", []
-    ):
-      dados_tabela_estruturados.append({
-          "Subitem LC 116": texto_processado,
-          "Código NBS": item["codigo"],
-          "Descrição Oficial da NBS": item["descricao"],
-          "Área de Atuação com Exemplo Prático": (
-              f"Gerado via enquadramento inteligente para {item['codigo']}"
-          ),
-      })
+    # Extração inteligente do JSON gerado pela IA para popular o Excel perfeitamente sincronizado
+    try:
+      if "```json" in resposta_ia:
+        json_str = resposta_ia.split("```json")[1].split("```")[0].strip()
+      elif "```" in resposta_ia:
+        json_str = resposta_ia.split("```")[1].split("```")[0].strip()
+      else:
+        json_str = ""
 
-    # Guardar APENAS a resposta limpa da IA na sessão pública
+      dados_json = json.loads(json_str)
+      if "dados_tabela" in dados_json:
+        for item in dados_json["dados_tabela"]:
+          dados_tabela_estruturados.append({
+              "Subitem LC 116": item.get("subitem", texto_processado),
+              "Código NBS": item.get("codigo_nbs", ""),
+              "Descrição Oficial da NBS": item.get("descricao_nbs", ""),
+              "Área de Atuação com Exemplo Prático": item.get(
+                  "exemplo_pratico", ""
+              ),
+          })
+    except Exception:
+      # Fallback de segurança caso a IA omita o JSON, usando a base padrão para o Excel
+      for item in dicionario_lc116.get(texto_processado, {}).get(
+          "nbs_oficiais", []
+      ):
+        dados_tabela_estruturados.append({
+            "Subitem LC 116": texto_processado,
+            "Código NBS": item["codigo"],
+            "Descrição Oficial da NBS": item["descricao"],
+            "Área de Atuação com Exemplo Prático": (
+                f"Atividade especializada vinculada ao código {item['codigo']}"
+            ),
+        })
+
+    # Opcional: remover o bloco JSON da visualização pública do chat para manter a interface limpa
+    if "```json" in resposta_ia:
+      resposta_ia_exibicao = resposta_ia.split("```json")[0].strip()
+    else:
+      resposta_ia_exibicao = resposta_ia
+
     mensagem_ia = {
         "role": "assistant",
-        "content": resposta_ia,
+        "content": resposta_ia_exibicao,
         "tabela_dados": dados_tabela_estruturados,
     }
     st.session_state["lista_mensagens"].append(mensagem_ia)
