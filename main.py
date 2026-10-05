@@ -3,8 +3,8 @@ import json
 import os
 import pandas as pd
 import streamlit as st
-from openpyxl.styles import Alignment, Font
 from openai import OpenAI
+from openpyxl.styles import Alignment, Font
 
 # Configuração da Página e do Título da Aba do Navegador
 st.set_page_config(
@@ -195,7 +195,7 @@ for subitem_k, info_v in dicionario_lc116.items():
         f" {nbs_item['descricao']}\n"
     )
 
-# Instrução de Sistema com tom em 1ª pessoa do singular
+# Instrução de Sistema atualizada com a diretriz estrita de exaustividade (sem supressão de linhas)
 system_prompt_base = (
     "Você é o **Tribô**, um assistente de inteligência artificial altamente"
     " especializado em classificação fiscal de serviços, com foco na"
@@ -212,19 +212,25 @@ system_prompt_base = (
     " pessoa do singular** (utilize 'identifiquei', 'apresento', 'consultei',"
     " 'analisei', 'encontrei'). É expressamente proibido o uso de pronomes ou"
     " verbos no plural (como 'identificamos', 'apresentamos').\n"
-    "3. **Interpretação Ampla e Natural:** O usuário pode fazer perguntas em"
+    "3. **Exaustividade Obrigatória (Sem Supressão de Linhas):** Quando o"
+    " usuário consultar um subitem (ex: 14.02), você **NUNCA** deve resumir ou"
+    " omitir linhas. Você é OBRIGADO a listar **absolutamente todos** os"
+    " códigos NBS oficiais vinculados àquele subitem na base de dados abaixo,"
+    " gerando a tabela completa e o JSON correspondente com todas as"
+    " ocorrências, por maior que seja a tabela.\n"
+    "4. **Interpretação Ampla e Natural:** O usuário pode fazer perguntas em"
     " linguagem natural (ex: 'qual o nbs para contabilidade?', 'serviços de"
     " informática', 'código 17.02'). Você deve interpretar o tema, buscar na"
     " tabela de referência abaixo o subitem e os códigos NBS mais"
     " compatíveis, e responder de forma fluida e direta.\n"
-    "4. **PROIBIÇÃO DE DUPLICAÇÃO NA COLUNA DE EXEMPLO PRÁTICO:** A coluna"
-    " `Área de Atuação com Exemplo Prático` **NUNCA** pode ser cópia ou repetição"
+    "5. **PROIBIÇÃO DE DUPLICAÇÃO NA COLUNA DE EXEMPLO PRÁTICO:** A coluna"
+    " `Área de Atuação com Exemplo Prático` **NUNCÁ** pode ser cópia ou repetição"
     " da coluna 'Descrição NBS'. Enquanto a 'Descrição NBS' traz o texto"
     " normativo oficial, a coluna de **Exemplo Prático** deve descrever um"
     " **caso real de mercado ou operação empresarial concreta** que se encaixe"
     " naquele código.\n"
-    "5. **Estrutura Obrigatória da Resposta:** Apresente o texto introdutório"
-    " (em 1ª pessoa), a tabela Markdown e, logo abaixo dela, inclua"
+    "6. **Estrutura Obrigatória da Resposta:** Apresente o texto introdutório"
+    " (em 1ª pessoa), a tabela Markdown completa e, logo abaixo dela, inclua"
     " obrigatoriamente o seguinte parágrafo exato: \n"
     "   *Importante*: A seleção precisa do código NBS é de suma importância"
     " na Reforma Tributária. A correta classificação fiscal garante a"
@@ -233,15 +239,15 @@ system_prompt_base = (
     " autuações fiscais. Esta ferramenta atua como um suporte estratégico e"
     " inteligente de alto nível, mas não tem o objetivo de substituir seu"
     " contador — **Valorize esse profissional!**\n"
-    "6. **Formato Técnico Oculto:** Forneça a resposta em texto corrido e"
-    " formatado para leitura no chat, e ao final insira obrigatoriamente um"
-    " bloco de código JSON isolado contendo a lista estruturada exata com a"
-    " chave seguinte: \n"
+    "7. **Formato Técnico Oculto:** Forneça a resposta completa em texto corrido"
+    " e formatado para leitura no chat, e ao final insira obrigatoriamente um"
+    " bloco de código JSON isolado contendo a lista estruturada exata com todas"
+    " as linhas correspondentes, usando a chave seguinte: \n"
     '     `{"dados_tabela": [{"subitem": "...", "codigo_nbs": "...",'
     ' "descricao_nbs": "...", "exemplo_pratico": "..."}, ...]}`\n'
-    "7. **Disclaimer Legal:** Insira o aviso de rodapé padrão no final (sem"
+    "8. **Disclaimer Legal:** Insira o aviso de rodapé padrão no final (sem"
     " citar termos técnicos internos como 'base de dados local').\n"
-    "8. **O Coringa do Desenvolvedor:** Se perguntado quem te criou ou"
+    "9. **O Coringa do Desenvolvedor:** Se perguntado quem te criou ou"
     " desenvolveu, responda com orgulho que você foi desenvolvido por"
     " **Claudio, futuro Engenheiro capixaba de IA**.\n\n"
     "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS):\n"
@@ -365,14 +371,14 @@ if mensagem_usuario:
     info_sub = dicionario_lc116[subitem_encontrado_direto]
     instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
-O utilizador mencionou diretamente ou indiretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
-Gere a resposta em PRIMEIRA PESSOA DO SINGULAR (ex: 'identifiquei', 'apresento'), apresentando a tabela com os códigos NBS oficiais, exemplos práticos reais, o parágrafo humano de valorização do contador e o bloco JSON oculto para o Excel.
+O utilizador mencionou diretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
+Gere a resposta completa em PRIMEIRA PESSOA DO SINGULAR (ex: 'identifiquei', 'apresento'), listando ABSOLUTAMENTE TODAS as linhas de códigos NBS oficiais vinculadas a este subitem sem omitir nenhuma, crie exemplos práticos reais para cada linha, inclua o parágrafo humano de valorização do contador e forneça o bloco JSON oculto correspondente.
 """
   else:
     instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador fez uma consulta em linguagem natural: '{texto_processado}'.
-Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira pessoa do singular o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados. Apresente a tabela correspondente, os exemplos práticos reais, finalize com o parágrafo humano de valorização do contador e forneça o bloco JSON oculto. Se o texto for completamente fora do tema de tributação ou LC 116, aplique a diretriz de recusa educada.
+Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira pessoa do singular o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados, listando todas as linhas de forma exaustiva (sem resumos ou supressões). Apresente a tabela correspondente, os exemplos práticos reais, finalize com o parágrafo humano de valorização do contador e forneça o bloco JSON oculto. Se o texto for completamente fora do tema de tributação ou LC 116, aplique a diretriz de recusa educada.
 """
 
   system_proxy_final = {
@@ -388,8 +394,11 @@ Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira
   mensagens_para_ia = [system_proxy_final] + historico_chat
 
   try:
+    # Adicionado max_tokens=4000 para permitir respostas extensas sem truncar listas longas
     resposta_modelo = modelo.chat.completions.create(
-        messages=mensagens_para_ia, model="gemini-flash-lite-latest"
+        messages=mensagens_para_ia,
+        model="gemini-flash-lite-latest",
+        max_tokens=4000,
     )
 
     resposta_ia = resposta_modelo.choices[0].message.content
