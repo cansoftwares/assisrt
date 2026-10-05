@@ -10,11 +10,11 @@ st.set_page_config(
     page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️"
 )
 
-# Estilo CSS ajustado para expandir o container principal para 92% da largura da tela
+# Estilo CSS com responsividade inteligente para celulares e telas pequenas
 st.markdown(
     """
 <style>
-    /* Expande a área central da aplicação para ocupar uma proporção excelente e fluida da tela (cerca de 92%) */
+    /* Expande a área central da aplicação com comportamento responsivo adaptável */
     [data-testid="stMainBlockContainer"] {
         max-width: 92% !important;
         width: 92% !important;
@@ -31,13 +31,13 @@ st.markdown(
         border-radius: 12px !important;
     }
 
-    /* Cabeçalho principal travado em linha única com tamanho otimizado */
+    /* Cabeçalho principal com quebra de linha automática em telas menores */
     .cabecalho-principal {
         font-size: 1.45rem !important;
         font-weight: 600;
         margin-bottom: 0.5rem;
         color: inherit;
-        white-space: nowrap;
+        word-break: break-word;
     }
 
     /* Balões de chat ocupando 100% da largura alinhados */
@@ -71,9 +71,24 @@ st.markdown(
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
     }
 
-    /* Mantém as tabelas legíveis dentro do balão */
+    /* Adaptação e rolagem fluida para tabelas em dispositivos móveis */
     table {
         width: 100% !important;
+    }
+    
+    /* Media Query para Celulares e Telas Pequenas (Zoom Elevado / Mobile) */
+    @media (max-width: 768px) {
+        [data-testid="stMainBlockContainer"] {
+            max-width: 100% !important;
+            width: 100% !important;
+            padding: 1rem !important;
+            border: none !important;
+            border-radius: 0px !important;
+            box-shadow: none !important;
+        }
+        .cabecalho-principal {
+            font-size: 1.2rem !important;
+        }
     }
 </style>
 """,
