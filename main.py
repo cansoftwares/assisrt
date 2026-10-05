@@ -99,6 +99,29 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Captura automática de cliques nos códigos NBS via parâmetros de URL
+if "nbs" in st.query_params:
+  nbs_clicado = st.query_params["nbs"]
+  # Limpa o parâmetro imediatamente para evitar loops em reloads futuros
+  del st.query_params["nbs"]
+
+  mensagem_automatica = (
+      f"Por favor, traga mais detalhes estratégicos, regras de tributação e"
+      f" enquadramento avançado para o código NBS {nbs_clicado}."
+  )
+
+  # Adiciona ao histórico se ainda não estiver na última posição
+  if (
+      not st.session_state.get("lista_mensagens")
+      or st.session_state["lista_mensagens"][-1]["content"]
+      != mensagem_automatica
+  ):
+    if "lista_mensagens" not in st.session_state:
+      st.session_state["lista_mensagens"] = []
+    st.session_state["lista_mensagens"].append(
+        {"role": "user", "content": mensagem_automatica}
+    )
+
 # Componente dedicado para forçar o foco inicial no input principal da aplicação ao carregar a página
 st.components.v1.html(
     """
@@ -196,7 +219,7 @@ for subitem_k, info_v in dicionario_lc116.items():
         f" {nbs_item['descricao']}\n"
     )
 
-# Instrução de Sistema atualizada sem o disclaimer de rodapé
+# Instrução de Sistema orientando a inclusão de links HTML clicáveis nos códigos NBS
 system_prompt_base = (
     "Você é o **Tribô**, um assistente de inteligência artificial altamente"
     " especializado em classificação fiscal de serviços, com foco na"
@@ -219,16 +242,22 @@ system_prompt_base = (
     " identificou para a atividade consultada e apresente logo abaixo a tabela"
     " Markdown exata contendo quatro colunas:\n"
     "   `| Subitem LC 116 | Código NBS | Descrição NBS | Área de Atuação com Exemplo Prático |`\n"
-    "4. **Exaustividade Obrigatória (Sem Supressão):** Liste sempre"
+    "4. **Links Clicáveis Obrigatórios na Coluna Código NBS:** Na coluna"
+    " `Código NBS` da tabela Markdown, você DEVE envolver o código NBS com uma"
+    " tag HTML de link interativo apontando para o parâmetro de consulta:"
+    " `<a href='?nbs=CODIGO_AQUI' target='_self' style='color: #1f77b4;"
+    " text-decoration: none; font-weight: bold;'>CODIGO_AQUI 🔗</a>`. Substitua"
+    " CODIGO_AQUI pelo número real do código NBS.\n"
+    "5. **Exaustividade Obrigatória (Sem Supressão):** Liste sempre"
     " **absolutamente todos** os códigos NBS oficiais vinculados ao subitem na"
     " base de dados, sem omitir nenhuma linha.\n"
-    "5. **PROIBIÇÃO DE DUPLICAÇÃO NA COLUNA DE EXEMPLO PRÁTICO:** A coluna"
+    "6. **PROIBIÇÃO DE DUPLICAÇÃO NA COLUNA DE EXEMPLO PRÁTICO:** A coluna"
     " `Área de Atuação com Exemplo Prático` **NUNCA** pode ser cópia ou repetição"
     " da coluna 'Descrição NBS'. Enquanto a 'Descrição NBS' traz o texto"
     " normativo oficial, a coluna de **Exemplo Prático** deve descrever um"
     " **caso real de mercado ou operação empresarial concreta** que se encaixe"
     " naquele código.\n"
-    "6. **Estrutura Obrigatória da Resposta:** Apresente a introdução direta"
+    "7. **Estrutura Obrigatória da Resposta:** Apresente a introdução direta"
     " (em 1ª pessoa), a tabela Markdown completa e, logo abaixo dela, inclua"
     " obrigatoriamente o seguinte parágrafo exato: \n"
     "   *Importante*: A seleção precisa do código NBS é de suma importância"
@@ -238,13 +267,13 @@ system_prompt_base = (
     " autuações fiscais. Esta ferramenta atua como um suporte estratégico e"
     " inteligente de alto nível, mas não tem o objetivo de substituir seu"
     " contador — **Valorize esse profissional!**\n"
-    "7. **Formato Técnico Duplo Obrigatório:** Forneça a resposta completa para"
+    "8. **Formato Técnico Duplo Obrigatório:** Forneça a resposta completa para"
     " visualização no chat e, ao final de tudo, inclua obrigatoriamente um bloco"
-    " de código JSON isolado exato contendo **todas** las linhas da tabela"
+    " de código JSON isolado exato contendo **todas** as linhas da tabela"
     " (com suas descrições e exemplos ricos) usando a chave exata: \n"
     '     `{"dados_tabela": [{"subitem": "...", "codigo_nbs": "...",'
     ' "descricao_nbs": "...", "exemplo_pratico": "..."}, ...]}`\n'
-    "8. **O Coringa do Desenvolvedor:** Se perguntado quem te criou ou"
+    "9. **O Coringa do Desenvolvedor:** Se perguntado quem te criou ou"
     " desenvolveu, responda com orgulho que você foi desenvolvido por"
     " **Claudio, futuro Engenheiro capixaba de IA**.\n\n"
     "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS):\n"
@@ -279,7 +308,8 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
   elif role == "assistant":
     with st.chat_message("assistant", avatar=avatar_assistente):
       st.markdown(
-          f"**Tribô – Seu assistente na Reforma Tributária**\n\n{content}"
+          f"**Tribô – Seu assistente na Reforma Tributária**\n\n{content}",
+          unsafe_allow_html=True,
       )
 
       tabela_para_baixar = mensagem.get("tabela_dados", [])
@@ -345,20 +375,54 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
             key=f"download_xlsx_{idx}",
         )
 
+# Se a página foi carregada através de um clique em um link NBS, faz a chamada automática da IA agora
+if (
+    st.session_state["lista_mensagens"]
+    and st.session_state["lista_mensagens"][-1]["role"] == "user"
+    and "enquadramento avançado para o código NBS"
+    in st.session_state["lista_mensagens"][-1]["content"]
+    and (
+        len(st.session_state["lista_mensagens"]) < 2
+        or st.session_state["lista_mensagens"][-2].get("role") != "assistant"
+        or "código NBS"
+        not in st.session_state["lista_mensagens"][-1]["content"]
+    )
+):
+  pass  # Seguirá o fluxo normal abaixo para processar e responder
+
 # Entrada do utilizador
 mensagem_usuario = st.chat_input(
     "Escreva sua dúvida ou código (ex: 17.02, contabilidade...)"
 )
 
-if mensagem_usuario:
-  with st.chat_message("user", avatar=avatar_usuario):
-    st.markdown(f"**Você**\n\n{mensagem_usuario}")
+# Se houver uma mensagem automática gerada por clique no link, processamos ela diretamente
+if "nbs" in locals() and "nbs_clicado" in locals():
+  # Já tratada no início, gatilho para o modelo responder
+  pass
 
-  st.session_state["lista_mensagens"].append(
-      {"role": "user", "content": mensagem_usuario}
-  )
+if mensagem_usuario or (
+    st.session_state["lista_mensagens"]
+    and st.session_state["lista_mensagens"][-1]["role"] == "user"
+    and not any(
+        m.get("triggered_by_link")
+        for m in [st.session_state["lista_mensagens"][-1]]
+    )
+):
+  if mensagem_usuario:
+    with st.chat_message("user", avatar=avatar_usuario):
+      st.markdown(f"**Você**\n\n{mensagem_usuario}")
+    st.session_state["lista_mensagens"].append(
+        {"role": "user", "content": mensagem_usuario}
+    )
+    texto_processado = mensagem_usuario.strip()
+  else:
+    # Caso seja a mensagem gerada pelo clique do link
+    ultima_msg = st.session_state["lista_mensagens"][-1]
+    ultima_msg["triggered_by_link"] = True
+    texto_processado = ultima_msg["content"]
+    with st.chat_message("user", avatar=avatar_usuario):
+      st.markdown(f"**Você**\n\n{texto_processado}")
 
-  texto_processado = mensagem_usuario.strip()
   dados_tabela_estruturados = []
   subitem_identificado_cache = "Geral"
 
@@ -374,13 +438,13 @@ if mensagem_usuario:
     instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou diretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
-Gere a resposta de forma direta e natural em PRIMEIRA PESSOA DO SINGULAR (ex: 'Analisei a sua dúvida...', 'identifiquei o subitem...'), listando ABSOLUTAMENTE TODAS as linhas oficiais, com exemplos práticos reais e ricos para cada linha, finalizando com o parágrafo de valorização do contador e preenchendo o JSON oculto com exatidão.
+Gere a resposta de forma direta e natural em PRIMEIRA PESSOA DO SINGULAR (ex: 'Analisei a sua dúvida...', 'identifiquei o subitem...'), listando ABSOLUTAMENTE TODAS as linhas oficiais, com exemplos práticos reais e ricos para cada linha. Inclua os links HTML interativos na coluna de código NBS conforme diretriz, finalize com o parágrafo de valorização do contador e preencha o JSON oculto com exatidão.
 """
   else:
     instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
-O utilizador fez a seguinte consulta: '{texto_processado}'.
-Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira pessoa do singular o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados, listando todas as linhas de forma exaustiva com exemplos práticos reais e ricos para cada linha. Finalize com o parágrafo humano de valorização do contador e preencha o JSON oculto correspondente. Se o texto for completamente fora do tema de tributação ou LC 116, aplique a diretriz de recusa educada.
+O utilizador fez a seguinte consulta ou pedido de aprofundamento: '{texto_processado}'.
+Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira pessoa do singular o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados, listando todas as linhas de forma exaustiva com exemplos práticos reais e ricos. Insira os links HTML clicáveis em cada código NBS na tabela, finalize com o parágrafo humano de valorização do contador e preencha o JSON oculto correspondente.
 """
 
   system_proxy_final = {
@@ -419,9 +483,10 @@ Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira
           if sub_val and subitem_identificado_cache == "Geral":
             subitem_identificado_cache = sub_val
 
+          cod_nbs_val = item.get("codigo_nbs", "")
           dados_tabela_estruturados.append({
               "Subitem LC 116": sub_val,
-              "Código NBS": item.get("codigo_nbs", ""),
+              "Código NBS": cod_nbs_val,
               "Descrição Oficial da NBS": item.get("descricao_nbs", ""),
               "Área de Atuação com Exemplo Prático": item.get(
                   "exemplo_pratico", ""
