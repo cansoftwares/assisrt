@@ -99,7 +99,13 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Captura automática de cliques nos códigos NBS via parâmetros de URL
+# ==========================================
+# 1. INICIALIZAÇÃO IMEDIATA DA MEMÓRIA DO CHAT
+# ==========================================
+if "lista_mensagens" not in st.session_state:
+  st.session_state["lista_mensagens"] = []
+
+# Captura automática de cliques nos códigos NBS via parâmetros de URL (agora com a sessão garantida)
 if "nbs" in st.query_params:
   nbs_clicado = st.query_params["nbs"]
   # Limpa o parâmetro imediatamente para evitar loops em reloads futuros
@@ -110,14 +116,12 @@ if "nbs" in st.query_params:
       f" enquadramento avançado para o código NBS {nbs_clicado}."
   )
 
-  # Adiciona ao histórico se ainda não estiver na última posição
+  # Adiciona ao histórico mantendo tudo o que já foi conversado antes
   if (
-      not st.session_state.get("lista_mensagens")
+      not st.session_state["lista_mensagens"]
       or st.session_state["lista_mensagens"][-1]["content"]
       != mensagem_automatica
   ):
-    if "lista_mensagens" not in st.session_state:
-      st.session_state["lista_mensagens"] = []
     st.session_state["lista_mensagens"].append(
         {"role": "user", "content": mensagem_automatica}
     )
@@ -286,10 +290,6 @@ modelo = OpenAI(
     base_url="https://generativelanguage.googleapis.com/v1beta/openai",
 )
 
-# Session State = Memória do Streamlit
-if "lista_mensagens" not in st.session_state:
-  st.session_state["lista_mensagens"] = []
-
 # Caminhos para os ícones locais na pasta raiz
 avatar_usuario = "perfil_usuario.png"
 avatar_assistente = "icone_assistente.png"
@@ -297,7 +297,7 @@ avatar_assistente = "icone_assistente.png"
 # Controlador booleano para garantir que o script de foco seja injetado imediatamente após renderizar a nova resposta
 deve_focar_input = False
 
-# Exibir o histórico de mensagens limpo
+# Exibir o histórico de mensagens completo e preservado
 for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
   role = mensagem["role"]
   content = mensagem["content"]
@@ -375,31 +375,12 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
             key=f"download_xlsx_{idx}",
         )
 
-# Se a página foi carregada através de um clique em um link NBS, faz a chamada automática da IA agora
-if (
-    st.session_state["lista_mensagens"]
-    and st.session_state["lista_mensagens"][-1]["role"] == "user"
-    and "enquadramento avançado para o código NBS"
-    in st.session_state["lista_mensagens"][-1]["content"]
-    and (
-        len(st.session_state["lista_mensagens"]) < 2
-        or st.session_state["lista_mensagens"][-2].get("role") != "assistant"
-        or "código NBS"
-        not in st.session_state["lista_mensagens"][-1]["content"]
-    )
-):
-  pass  # Seguirá o fluxo normal abaixo para processar e responder
-
 # Entrada do utilizador
 mensagem_usuario = st.chat_input(
     "Escreva sua dúvida ou código (ex: 17.02, contabilidade...)"
 )
 
-# Se houver uma mensagem automática gerada por clique no link, processamos ela diretamente
-if "nbs" in locals() and "nbs_clicado" in locals():
-  # Já tratada no início, gatilho para o modelo responder
-  pass
-
+# Se houver uma mensagem automática gerada por clique no link OU mensagem nova do input
 if mensagem_usuario or (
     st.session_state["lista_mensagens"]
     and st.session_state["lista_mensagens"][-1]["role"] == "user"
