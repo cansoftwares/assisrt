@@ -10,17 +10,20 @@ st.set_page_config(
     page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️"
 )
 
-# Estilo CSS focado em delimitar a área com bordas refinadas, estilizar os nomes e o cabeçalho
+# Estilo CSS ajustado para expandir o container principal para 92% da largura da tela
 st.markdown(
     """
 <style>
-    /* Delimita e destaca a área central da aplicação com bordas elegantes e sombra suave */
+    /* Expande a área central da aplicação para ocupar uma proporção excelente e fluida da tela (cerca de 92%) */
     [data-testid="stMainBlockContainer"] {
+        max-width: 92% !important;
+        width: 92% !important;
         border: 1px solid rgba(49, 51, 63, 0.2) !important;
         border-radius: 16px !important;
         padding: 2.5rem !important;
         box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
         background-color: transparent !important;
+        margin: auto !important;
     }
 
     /* Estilização refinada para a caixa de input flutuante */
