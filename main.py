@@ -265,50 +265,73 @@ if mensagem_usuario:
       desc_nbs = item["descricao"]
       desc_lower = desc_nbs.lower()
 
-      # Gerador Dinâmico Inteligente e Específico por Código NBS Atual
-      if any(
-          k in desc_lower
-          for k in [
-              "contabilidade",
-              "escrituração",
-              "fiscal",
-              "tributária",
-              "balanço",
-          ]
+      # Mapeamento profissional estruturado por Áreas de Atuação e Casos Práticos Reais
+      if (
+          "solo" in desc_lower
+          or "semente" in desc_lower
+          or "fitossanitário" in desc_lower
       ):
-        area = "Contabilidade e Finanças"
-        acao = f"execução e conferência de {desc_nbs}"
-      elif any(
-          k in desc_lower for k in ["folha", "pagamento", "pessoal", "salário"]
+        exemplo_pratico = (
+            "Agronegócio: Realização de análises laboratoriais físico-químicas"
+            " em amostras de solo e sementes para emissão de laudo de"
+            " recomendação de adubação e controle fitossanitário em lavouras."
+        )
+      elif "pureza" in desc_lower or "composição" in desc_lower:
+        exemplo_pratico = (
+            "Indústria Química: Ensaios laboratoriais e emissão de laudo"
+            " técnico atestando o grau de pureza, teor de umidade e"
+            " composição química de matérias-primas fabris."
+        )
+      elif "físicas" in desc_lower or "mecânica" in desc_lower:
+        exemplo_pratico = (
+            "Construção Civil: Ensaios tecnológicos para verificação da"
+            " resistência à compressão e propriedades físicas de corpos de"
+            " prova de concreto em canteiros de obras."
+        )
+      elif "elétricos" in desc_lower or "mecânicos" in desc_lower:
+        exemplo_pratico = (
+            "Engenharia e Manutenção: Inspeção técnica especializada e exames"
+            " de conformidade em painéis e instalações elétricas industriais"
+            " (Norma NR-10)."
+        )
+      elif "veículos" in desc_lower or "transporte" in desc_lower:
+        exemplo_pratico = (
+            "Setor Automotivo: Vistoria técnica veicular periódica em frotas"
+            " de transporte rodoviário para emissão de laudo de segurança"
+            " estrutural."
+        )
+      elif "contabilidade" in desc_lower or "escrituração" in desc_lower:
+        exemplo_pratico = (
+            "Contabilidade Consultiva: Execução de escrituração contábil"
+            " digital, apuração de tributos federais e entrega de obrigações"
+            " acessórias (SPED)."
+        )
+      elif "folha de pagamento" in desc_lower or "trabalhista" in desc_lower:
+        exemplo_pratico = (
+            "Departamento Pessoal: Gestão mensal de folha de pagamento,"
+            " encargos sociais (eSocial) e rotinas de admissão e rescisão."
+        )
+      elif (
+          "escolta" in desc_lower
+          or "guarda" in desc_lower
+          or "vigilância" in desc_lower
       ):
-        area = "Recursos Humanos"
-        acao = f"gestão operacional de {desc_nbs}"
-      elif any(
-          k in desc_lower
-          for k in ["escolta", "guarda", "vigilância", "segurança"]
-      ):
-        area = "Segurança Patrimonial"
-        acao = f"prestação de {desc_nbs}"
-      elif any(
-          k in desc_lower for k in ["consultoria", "gerenciamento", "projeto"]
-      ):
-        area = "Consultoria Técnica"
-        acao = f"desenvolvimento de {desc_nbs}"
-      elif any(
-          k in desc_lower for k in ["sistema", "eletrônico", "monitoramento"]
-      ):
-        area = "Tecnologia e Automação"
-        acao = f"implementação de {desc_nbs}"
-      elif any(
-          k in desc_lower for k in ["análise", "ensaio", "laudo", "exame"]
-      ):
-        area = "Serviços Técnicos Especializados"
-        acao = f"emissão de {desc_nbs}"
+        exemplo_pratico = (
+            "Segurança Patrimonial: Prestação de serviços de escolta armada e"
+            " monitoramento para o transporte rodoviário de cargas sensíveis e"
+            " de alto valor."
+        )
+      elif "consultoria" in desc_lower or "gerenciamento" in desc_lower:
+        exemplo_pratico = (
+            "Consultoria Estratégica: Elaboração de projetos de engenharia e"
+            " planos de gerenciamento de riscos corporativos."
+        )
       else:
-        area = "Gestão Operacional"
-        acao = f"prestação de {desc_nbs}"
-
-      exemplo_pratico = f"{area}: {acao.capitalize()} para suporte corporativo e conformidade fiscal vinculada ao código NBS {cod_nbs}."
+        exemplo_pratico = (
+            f"Gestão Corporativa: Prestação de serviços técnicos"
+            f" especializados de suporte operacional e consultoria analítica"
+            f" vinculados ao código NBS {cod_nbs}."
+        )
 
       texto_nbs_formatado += (
           f"- Código NBS: {cod_nbs} | Descrição Oficial da NBS: {desc_nbs} |"
@@ -328,7 +351,7 @@ if mensagem_usuario:
 O usuário consultou nesta mensagem o subitem '{texto_processado}' da LC 116/2003. 
 ATENÇÃO: Trate esta consulta como um evento único e isolado. Não reutilize dados, tabelas ou exemplos de interações anteriores do histórico.
 - Descrição Oficial LC 116: '{descricao_oficial}'
-- Códigos NBS Oficiais e Exemplos Práticos Específicos para este Subitem (OBRIGATÓRIO USAR EXATAMENTE ESTES DADOS):
+- Códigos NBS Oficiais e Exemplos Práticos Específicos para este Subitem (OBRIGATÓRIO USAR EXATAMENTE ESTES DADOS NA TABELA):
 {texto_nbs_formatado}
 
 DIRETRIZ DE REDAÇÃO OBRIGATÓRIA: 
@@ -336,7 +359,7 @@ DIRETRIZ DE REDAÇÃO OBRIGATÓRIA:
 "Com base no subitem {texto_processado} ({descricao_oficial}) da LC 116/2003 e nas correspondências oficiais da Nomenclatura Brasileira de Serviços (NBS), apresento abaixo o mapeamento fiscal para enquadramento da operação:"
 
 2. Em seguida, monte a tabela Markdown contendo exatamente quatro colunas: `Subitem LC 116 | Código NBS | Descrição Oficial da NBS | Área de Atuação com Exemplo Prático`.
-3. Preencha a 4ª coluna exclusivamente com os textos de "Exemplo Prático Obrigatório" gerados especificamente para esta consulta.
+3. Preencha a 4ª coluna exclusivamente com os textos estruturados de "Exemplo Prático Obrigatório" fornecidos acima, destacando a Área de Atuação antes do caso prático.
 """
   else:
     contexto_extraido = f"""
