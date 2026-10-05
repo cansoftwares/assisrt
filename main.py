@@ -167,7 +167,7 @@ modelo = OpenAI(
     base_url="https://generativelanguage.googleapis.com/v1beta/openai",
 )
 
-# Instrução de Sistema (System Prompt Blindado e Sincronizado)
+# Instrução de Sistema (System Prompt Blindado)
 system_prompt_base = (
     "Você é o **Tribô**, um assistente de inteligência artificial altamente"
     " especializado em classificação fiscal de serviços, com foco na"
@@ -205,41 +205,38 @@ if "lista_mensagens" not in st.session_state:
 avatar_usuario = "perfil_usuario.png"
 avatar_assistente = "icone_assistente.png"
 
-# Exibir o histórico de mensagens
+# Exibir o histórico de mensagens limpo (apenas role e content públicos)
 for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
-  if mensagem["role"] != "system":
-    role = mensagem["role"]
-    content = mensagem["content"]
+  role = mensagem["role"]
+  content = mensagem["content"]
 
-    if role == "user":
-      with st.chat_message("user", avatar=avatar_usuario):
-        st.markdown(f"**Você**\n\n{content}")
-    else:
-      with st.chat_message("assistant", avatar=avatar_assistente):
-        st.markdown(
-            f"**Tribô – Seu assistente na Reforma Tributária**\n\n{content}"
+  if role == "user":
+    with st.chat_message("user", avatar=avatar_usuario):
+      st.markdown(f"**Você**\n\n{content}")
+  elif role == "assistant":
+    with st.chat_message("assistant", avatar=avatar_assistente):
+      st.markdown(
+          f"**Tribô – Seu assistente na Reforma Tributária**\n\n{content}"
+      )
+
+      tabela_para_baixar = mensagem.get("tabela_dados", [])
+      if tabela_para_baixar:
+        df_resposta = pd.DataFrame(tabela_para_baixar)
+
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+          df_resposta.to_excel(writer, index=False, sheet_name="Enquadramento")
+        excel_data = output.getvalue()
+
+        st.download_button(
+            label="📥 Baixar Planilha em Excel (.xlsx)",
+            data=excel_data,
+            file_name=f"enquadramento_nbs_{idx}.xlsx",
+            mime=(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            ),
+            key=f"download_xlsx_{idx}",
         )
-
-        tabela_para_baixar = mensagem.get("tabela_dados", [])
-        if tabela_para_baixar:
-          df_resposta = pd.DataFrame(tabela_para_baixar)
-
-          output = io.BytesIO()
-          with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            df_resposta.to_excel(
-                writer, index=False, sheet_name="Enquadramento"
-            )
-          excel_data = output.getvalue()
-
-          st.download_button(
-              label="📥 Baixar Planilha em Excel (.xlsx)",
-              data=excel_data,
-              file_name=f"enquadramento_nbs_{idx}.xlsx",
-              mime=(
-                  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-              ),
-              key=f"download_xlsx_{idx}",
-          )
 
 # Entrada do utilizador
 mensagem_usuario = st.chat_input(
@@ -249,6 +246,11 @@ mensagem_usuario = st.chat_input(
 if mensagem_usuario:
   with st.chat_message("user", avatar=avatar_usuario):
     st.markdown(f"**Você**\n\n{mensagem_usuario}")
+
+  # Guardar mensagem do utilizador limpa na sessão
+  st.session_state["lista_mensagens"].append(
+      {"role": "user", "content": mensagem_usuario}
+  )
 
   texto_processado = mensagem_usuario.strip()
   contexto_extraido = ""
@@ -305,7 +307,6 @@ if mensagem_usuario:
             f" {texto_processado}."
         )
 
-      # Gravamos na estrutura que vai para o Excel o exemplo contextual exato
       dados_tabela_estruturados.append({
           "Subitem LC 116": texto_processado,
           "Código NBS": item["codigo"],
@@ -330,18 +331,22 @@ DIRETRIZ DE REDAÇÃO OBRIGATÓRIA:
 """
   else:
     contexto_extraido = f"""
-[AVISO DO SISTEMA] O termo digitado '{texto_processado}' não foi localizado de forma exata como subitem no Anexo da base local da LC 116/2003. Responda orientando o usuário a digitar o código do subitem correto (ex: 17.02, 17.19) para realizar o mapeamento oficial.
+[AVISO DO SISTEMA] O termo digitado '{texto_processado}' não foi localizado de forma exata como subitem no Anexo da base local da LC 116/2003. Responda orientando o utilizador de forma educada e profissional a digitar o código do subitem correto (ex: 17.02, 17.19) para realizar o mapeamento oficial, sem mencionar termos técnicos internos de sistema.
 """
 
+  # Criar a mensagem de sistema dinâmica apenas para o envio à API da OpenAI (invisível ao utilizador)
   system_proxy_final = {
       "role": "system",
       "content": system_prompt_base + contexto_extraido,
   }
 
-  novo_usuario_msg = {"role": "user", "content": mensagem_usuario}
-  st.session_state["lista_mensagens"].append(novo_usuario_msg)
-
-  mensagens_para_ia = [system_proxy_final] + st.session_state["lista_mensagens"]
+  # Montar o histórico completo filtrando apenas as mensagens de chat públicas (user e assistant)
+  historico_chat = [
+      m
+      for m in st.session_state["lista_mensagens"]
+      if m["role"] in ["user", "assistant"]
+  ]
+  mensagens_para_ia = [system_proxy_final] + historico_chat
 
   try:
     resposta_modelo = modelo.chat.completions.create(
@@ -350,6 +355,7 @@ DIRETRIZ DE REDAÇÃO OBRIGATÓRIA:
 
     resposta_ia = resposta_modelo.choices[0].message.content
 
+    # Guardar APENAS a resposta limpa da IA na sessão pública
     mensagem_ia = {
         "role": "assistant",
         "content": resposta_ia,
