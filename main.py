@@ -184,9 +184,8 @@ system_prompt_base = (
     " Obrigatório da Tabela:** A tabela gerada deve conter obrigatoriamente"
     " as quatro colunas exatas: `Subitem LC 116 | Código NBS | Descrição"
     " Oficial da NBS | Área de Atuação com Exemplo Prático`.\n4. **Exemplo"
-    " Prático Contextualizado:** Para cada linha da tabela, crie um exemplo"
-    " prático e profissional adequado à respectiva descrição da NBS (ex:"
-    " agronegócio, construção civil, engenharia, consultoria, etc.).\n5."
+    " Prático Contextualizado:** Utilize exatamente os exemplos práticos"
+    " informados no prompt de contexto para cada código NBS correspondente.\n5."
     " **Disclaimer Legal:** Insira exatamente este aviso de forma bem breve no"
     " final:\n   > *💡 **Sobre a aplicação:** Facilitador de triagem fiscal"
     " baseado na LC 116 e regulamentações da Reforma Tributária. Não"
@@ -263,14 +262,34 @@ if mensagem_usuario:
 
     texto_nbs_formatado = ""
     for idx, item in enumerate(lista_nbs):
-      texto_nbs_formatado += (
-          f"- Código NBS: {item['codigo']} | Descrição Oficial da NBS:"
-          f" {item['descricao']}\n"
-      )
+      cod_nbs = item["codigo"]
+      desc_nbs = item["descricao"]
+      desc_lower = desc_nbs.lower()
 
-      # Mapeamento dinâmico de exemplos práticos contextuais correspondentes ao visual
-      desc_lower = item["descricao"].lower()
+      # Mapeamento unificado e exato (compartilhado entre o Chat e o Excel)
       if (
+          "escolta" in desc_lower
+          or "guarda" in desc_lower
+          or "vigilância" in desc_lower
+      ):
+        exemplo_pratico = (
+            "Agronegócio: Prestação de serviços de escolta armada para o"
+            " transporte rodoviário de defensivos agrícolas de alto valor e"
+            " insumos sensíveis entre centros de distribuição e fazendas."
+        )
+      elif "consultoria" in desc_lower or "gerenciamento" in desc_lower:
+        exemplo_pratico = (
+            "Construção Civil: Elaboração de projeto e consultoria técnica"
+            " especializada em planos de gerenciamento de riscos e segurança"
+            " patrimonial para canteiros de obras de grande porte."
+        )
+      elif "sistemas" in desc_lower or "eletrônicos" in desc_lower:
+        exemplo_pratico = (
+            "Indústria: Instalação e monitoramento remoto de sistemas"
+            " eletrônicos integrados, incluindo circuito fechado de TV (CFTV)"
+            " e barreiras perimetrais em parque fabril."
+        )
+      elif (
           "solo" in desc_lower
           or "semente" in desc_lower
           or "fitossanitário" in desc_lower
@@ -302,15 +321,20 @@ if mensagem_usuario:
         )
       else:
         exemplo_pratico = (
-            f"Consultoria Técnica: Prestação de exames técnicos especializados"
-            f" vinculados à NBS {item['codigo']} para o subitem"
-            f" {texto_processado}."
+            f"Logística e Cargas: Prestação de serviços de apoio logístico"
+            f" especializado e vigilância desarmada em terminais de cargas"
+            f" alfandegados."
         )
+
+      texto_nbs_formatado += (
+          f"- Código NBS: {cod_nbs} | Descrição Oficial da NBS: {desc_nbs} |"
+          f" Exemplo Prático Obrigatório: {exemplo_pratico}\n"
+      )
 
       dados_tabela_estruturados.append({
           "Subitem LC 116": texto_processado,
-          "Código NBS": item["codigo"],
-          "Descrição Oficial da NBS": item["descricao"],
+          "Código NBS": cod_nbs,
+          "Descrição Oficial da NBS": desc_nbs,
           "Área de Atuação com Exemplo Prático": exemplo_pratico,
       })
 
@@ -319,7 +343,7 @@ if mensagem_usuario:
 [DADOS OFICIAIS OBRIGATÓRIOS EXTRAÍDOS DA BASE DA RAIZ - ANEXO VIII]
 O usuário consultou exatamente o subitem '{texto_processado}' da LC 116/2003.
 - Descrição Oficial LC 116: '{descricao_oficial}'
-- Códigos NBS Oficiais e Descrições Oficiais Correspondentes (OBRIGATÓRIO USAR EXATAMENTE ESTES NAS COLUNAS 1, 2 E 3):
+- Códigos NBS Oficiais e Exemplos Práticos Correspondentes (OBRIGATÓRIO USAR EXATAMENTE ESTES DADOS NA TABELA):
 {texto_nbs_formatado}
 
 DIRETRIZ DE REDAÇÃO OBRIGATÓRIA: 
@@ -327,14 +351,14 @@ DIRETRIZ DE REDAÇÃO OBRIGATÓRIA:
 "Com base no subitem {texto_processado} ({descricao_oficial}) da LC 116/2003 e nas correspondências oficiais da Nomenclatura Brasileira de Serviços (NBS), apresento abaixo o mapeamento fiscal para enquadramento da operação:"
 
 2. Em seguida, monte a tabela Markdown contendo exatamente quatro colunas: `Subitem LC 116 | Código NBS | Descrição Oficial da NBS | Área de Atuação com Exemplo Prático`.
-3. Preencha a 4ª coluna ("Área de Atuação com Exemplo Prático") com exemplos profissionais contextuais e variados para cada linha (por exemplo, aplicando ao agronegócio, construção civil, indústria, etc., conforme demonstrado no seu exemplo visual).
+3. Preencha a 4ª coluna exatamente com os textos de "Exemplo Prático Obrigatório" fornecidos na lista acima para cada linha correspondente.
 """
   else:
     contexto_extraido = f"""
 [AVISO DO SISTEMA] O termo digitado '{texto_processado}' não foi localizado de forma exata como subitem no Anexo da base local da LC 116/2003. Responda orientando o utilizador de forma educada e profissional a digitar o código do subitem correto (ex: 17.02, 17.19) para realizar o mapeamento oficial, sem mencionar termos técnicos internos de sistema.
 """
 
-  # Criar a mensagem de sistema dinâmica apenas para o envio à API da OpenAI (invisível ao utilizador)
+  # Criar a mensagem de sistema dinâmica apenas para o envio à OpenAI (invisível ao utilizador)
   system_proxy_final = {
       "role": "system",
       "content": system_prompt_base + contexto_extraido,
