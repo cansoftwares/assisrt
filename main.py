@@ -10,17 +10,17 @@ st.set_page_config(
     page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️"
 )
 
-# Estilo CSS com responsividade inteligente para celulares e telas pequenas
+# Estilo CSS ajustado para corrigir o espaçamento e sobreposição do cabeçalho em telas menores / zoom alto
 st.markdown(
     """
 <style>
-    /* Expande a área central da aplicação com comportamento responsivo adaptável */
+    /* Expande a área central com padding superior seguro para o cabeçalho não encostar na borda */
     [data-testid="stMainBlockContainer"] {
         max-width: 92% !important;
         width: 92% !important;
         border: 1px solid rgba(49, 51, 63, 0.2) !important;
         border-radius: 16px !important;
-        padding: 2.5rem !important;
+        padding: 3rem 2.5rem 2.5rem 2.5rem !important;
         box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
         background-color: transparent !important;
         margin: auto !important;
@@ -31,13 +31,15 @@ st.markdown(
         border-radius: 12px !important;
     }
 
-    /* Cabeçalho principal com quebra de linha automática em telas menores */
+    /* Cabeçalho principal com espaçamento interno adequado e quebra limpa */
     .cabecalho-principal {
         font-size: 1.45rem !important;
         font-weight: 600;
-        margin-bottom: 0.5rem;
+        margin-top: 0.5rem;
+        margin-bottom: 0.75rem;
         color: inherit;
         word-break: break-word;
+        line-height: 1.3 !important;
     }
 
     /* Balões de chat ocupando 100% da largura alinhados */
@@ -71,17 +73,17 @@ st.markdown(
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
     }
 
-    /* Adaptação e rolagem fluida para tabelas em dispositivos móveis */
+    /* Adaptação e rolagem fluida para tabelas */
     table {
         width: 100% !important;
     }
     
-    /* Media Query para Celulares e Telas Pequenas (Zoom Elevado / Mobile) */
+    /* Media Query para Celulares e Telas Pequenas */
     @media (max-width: 768px) {
         [data-testid="stMainBlockContainer"] {
             max-width: 100% !important;
             width: 100% !important;
-            padding: 1rem !important;
+            padding: 1.5rem 1rem 1rem 1rem !important;
             border: none !important;
             border-radius: 0px !important;
             box-shadow: none !important;
