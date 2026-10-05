@@ -10,7 +10,7 @@ st.set_page_config(
     page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️"
 )
 
-# Estilo CSS ajustado para corrigir o espaçamento e sobreposição do cabeçalho em telas menores / zoom alto
+# Estilo CSS otimizado com correções de margem superior e responsividade para o cabeçalho
 st.markdown(
     """
 <style>
@@ -194,13 +194,7 @@ for subitem_k, info_v in dicionario_lc116.items():
         f" {nbs_item['descricao']}\n"
     )
 
-# Inicialização do Cliente OpenAI configurado para o Gemini API
-modelo = OpenAI(
-    api_key=st.secrets["GOOGLE_API_KEY"],
-    base_url="https://generativelanguage.googleapis.com/v1beta/openai",
-)
-
-# Instrução de Sistema atualizada para impedir a duplicação e exigir exemplos reais de mercado
+# Instrução de Sistema atualizada com a diretriz para incluir o parágrafo de valorização profissional e técnica após a tabela
 system_prompt_base = (
     "Você é o **Tribô**, um assistente de inteligência artificial altamente"
     " especializado em classificação fiscal de serviços, com foco na"
@@ -226,22 +220,35 @@ system_prompt_base = (
     " naquele código (ex: se a descrição for 'serviços de reservas...', o"
     " exemplo prático deve ser: 'Agência de turismo realizando reservas de"
     " auditórios para congressos corporativos').\n"
-    "4. **Formato Duplo Obrigatório da Resposta:** Retorne sua resposta"
+    "4. **Estrutura Obrigatória Pós-Tabela:** Logo abaixo da tabela em"
+    " Markdown, inclua obrigatoriamente um parágrafo analítico destacando a"
+    " importância técnica de selecionar o código NBS mais específico para a"
+    " correta apuração dos novos tributos (IBS e CBS), ressaltando o objetivo"
+    " estratégico da aplicação como ferramenta de apoio de alto nível e"
+    " concluindo com a valorização essencial do profissional contábil na"
+    " validação e segurança das operações.\n"
+    "5. **Formato Duplo Obrigatório da Resposta:** Retorne sua resposta"
     " estruturada em **duas partes estritas**:\n"
-    "   - **PARTE 1:** O texto de introdução amigável e a tabela Markdown"
-    " legível para visualização no chat.\n"
+    "   - **PARTE 1:** O texto introdutório, a tabela Markdown e o parágrafo"
+    " analítico/valorização do contador.\n"
     "   - **PARTE 2:** Um bloco de código JSON isolado contendo"
     " exatamente a lista estruturada com os dados correspondentes, usando a"
     " seguinte chave exata:\n"
     '     `{"dados_tabela": [{"subitem": "...", "codigo_nbs": "...",'
     ' "descricao_nbs": "...", "exemplo_pratico": "..."}, ...]}`\n'
-    "5. **Disclaimer Legal:** Insira o aviso de rodapé padrão no final (sem"
+    "6. **Disclaimer Legal:** Insira o aviso de rodapé padrão no final (sem"
     " citar termos técnicos internos como 'base de dados local').\n"
-    "6. **O Coringa do Desenvolvedor:** Se perguntado quem te criou ou"
+    "7. **O Coringa do Desenvolvedor:** Se perguntado quem te criou ou"
     " desenvolveu, responda com orgulho que você foi desenvolvido por"
     " **Claudio, futuro Engenheiro capixaba de IA**.\n\n"
     "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS):\n"
     f"{resumo_base_texto}"
+)
+
+# Inicialização do Cliente OpenAI configurado para o Gemini API
+modelo = OpenAI(
+    api_key=st.secrets["GOOGLE_API_KEY"],
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai",
 )
 
 # Session State = Memória do Streamlit
@@ -316,13 +323,13 @@ if mensagem_usuario:
     instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou diretamente ou indiretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
-Gere a resposta apresentando a tabela com os códigos NBS oficiais correspondentes a este subitem e crie exemplos práticos reais de mercado (diferentes da descrição oficial da NBS).
+Gere a resposta apresentando a tabela com os códigos NBS oficiais correspondentes a este subitem, crie exemplos práticos reais de mercado e adicione o parágrafo analítico de valorização da contabilidade logo abaixo da tabela.
 """
   else:
     instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador fez uma consulta em linguagem natural: '{texto_processado}'.
-Analise a Tabela de Referência Oficial fornecida acima, identifique o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados para responder com precisão à dúvida do usuário. Apresente a tabela correspondente com exemplos práticos reais e detalhados. Se o texto for completamente fora do tema de tributação ou LC 116, aplique a diretriz de recusa educada.
+Analise a Tabela de Referência Oficial fornecida acima, identifique o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados para responder com precisão à dúvida do usuário. Apresente a tabela correspondente, os exemplos práticos reais e finalize com o parágrafo analítico de valorização do profissional contábil. Se o texto for completamente fora do tema de tributação ou LC 116, aplique a diretriz de recusa educada.
 """
 
   system_proxy_final = {
