@@ -77,7 +77,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Componente dedicado para forçar o foco no input principal da aplicação
+# Componente dedicado para forçar o foco inicial no input principal da aplicação ao carregar a página
 st.components.v1.html(
     """
     <script>
@@ -205,6 +205,9 @@ if "lista_mensagens" not in st.session_state:
 # Caminhos para os ícones locais na pasta raiz
 avatar_usuario = "perfil_usuario.png"
 avatar_assistente = "icone_assistente.png"
+
+# Controlador booleano para garantir que o script de foco seja injetado imediatamente após renderizar a nova resposta
+deve_focar_input = False
 
 # Exibir o histórico de mensagens limpo (apenas role e content públicos)
 for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
@@ -353,7 +356,35 @@ DIRETRIZ DE GERAÇÃO:
         "tabela_dados": dados_tabela_estruturados,
     }
     st.session_state["lista_mensagens"].append(mensagem_ia)
+
+    deve_focar_input = True
     st.rerun()
 
   except Exception as e:
     st.error(f"Ocorreu um erro ao consultar a IA: {e}")
+
+# Script disparado dinamicamente para garantir que o input recupere o foco logo após a resposta ser exibida
+if deve_focar_input:
+  st.components.v1.html(
+      """
+        <script>
+            function focarNovamente() {
+                const doc = window.parent.document;
+                const chatInput = doc.querySelector('[data-testid="stChatInput"] textarea');
+                if (chatInput) {
+                    chatInput.focus();
+                    return true;
+                }
+                return false;
+            }
+            let t = 0;
+            const iv = setInterval(function() {
+                if (focarNovamente() || t > 30) {
+                    clearInterval(iv);
+                }
+                t++;
+            }, 100);
+        </script>
+    """,
+      height=0,
+  )
