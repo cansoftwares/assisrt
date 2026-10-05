@@ -195,7 +195,7 @@ for subitem_k, info_v in dicionario_lc116.items():
         f" {nbs_item['descricao']}\n"
     )
 
-# Instrução de Sistema atualizada com a diretriz estrita de exaustividade (sem supressão de linhas)
+# Instrução de Sistema limpa: sem mencionar processos internos e com introdução direta e elegante
 system_prompt_base = (
     "Você é o **Tribô**, um assistente de inteligência artificial altamente"
     " especializado em classificação fiscal de serviços, com foco na"
@@ -212,24 +212,21 @@ system_prompt_base = (
     " pessoa do singular** (utilize 'identifiquei', 'apresento', 'consultei',"
     " 'analisei', 'encontrei'). É expressamente proibido o uso de pronomes ou"
     " verbos no plural (como 'identificamos', 'apresentamos').\n"
-    "3. **Exaustividade Obrigatória (Sem Supressão de Linhas):** Quando o"
-    " usuário consultar um subitem (ex: 14.02), você **NUNCA** deve resumir ou"
-    " omitir linhas. Você é OBRIGADO a listar **absolutamente todos** os"
-    " códigos NBS oficiais vinculados àquele subitem na base de dados abaixo,"
-    " gerando a tabela completa e o JSON correspondente com todas as"
-    " ocorrências, por maior que seja a tabela.\n"
-    "4. **Interpretação Ampla e Natural:** O usuário pode fazer perguntas em"
-    " linguagem natural (ex: 'qual o nbs para contabilidade?', 'serviços de"
-    " informática', 'código 17.02'). Você deve interpretar o tema, buscar na"
-    " tabela de referência abaixo o subitem e os códigos NBS mais"
-    " compatíveis, e responder de forma fluida e direta.\n"
+    "3. **Estilo de Resposta Direto e Natural:** NUNCA mencione termos técnicos"
+    " internos (como 'linguagem natural', 'mapeei todas as linhas', 'base de"
+    " dados'). Seja natural e direto: diga qual subitem da LC 116/2003 você"
+    " identificou para a atividade consultada e apresente a tabela"
+    " correspondente com todos os códigos oficiais.\n"
+    "4. **Exaustividade Obrigatória (Sem Supressão):** Liste sempre"
+    " **absolutamente todos** os códigos NBS oficiais vinculados ao subitem na"
+    " base de dados, sem omitir nenhuma linha.\n"
     "5. **PROIBIÇÃO DE DUPLICAÇÃO NA COLUNA DE EXEMPLO PRÁTICO:** A coluna"
-    " `Área de Atuação com Exemplo Prático` **NUNCÁ** pode ser cópia ou repetição"
+    " `Área de Atuação com Exemplo Prático` **NUNCA** pode ser cópia ou repetição"
     " da coluna 'Descrição NBS'. Enquanto a 'Descrição NBS' traz o texto"
     " normativo oficial, a coluna de **Exemplo Prático** deve descrever um"
     " **caso real de mercado ou operação empresarial concreta** que se encaixe"
     " naquele código.\n"
-    "6. **Estrutura Obrigatória da Resposta:** Apresente o texto introdutório"
+    "6. **Estrutura Obrigatória da Resposta:** Apresente a introdução direta"
     " (em 1ª pessoa), a tabela Markdown completa e, logo abaixo dela, inclua"
     " obrigatoriamente o seguinte parágrafo exato: \n"
     "   *Importante*: A seleção precisa do código NBS é de suma importância"
@@ -245,8 +242,7 @@ system_prompt_base = (
     " as linhas correspondentes, usando a chave seguinte: \n"
     '     `{"dados_tabela": [{"subitem": "...", "codigo_nbs": "...",'
     ' "descricao_nbs": "...", "exemplo_pratico": "..."}, ...]}`\n'
-    "8. **Disclaimer Legal:** Insira o aviso de rodapé padrão no final (sem"
-    " citar termos técnicos internos como 'base de dados local').\n"
+    "8. **Disclaimer Legal:** Insira o aviso de rodapé padrão no final.\n"
     "9. **O Coringa do Desenvolvedor:** Se perguntado quem te criou ou"
     " desenvolveu, responda com orgulho que você foi desenvolvido por"
     " **Claudio, futuro Engenheiro capixaba de IA**.\n\n"
@@ -372,13 +368,13 @@ if mensagem_usuario:
     instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou diretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
-Gere a resposta completa em PRIMEIRA PESSOA DO SINGULAR (ex: 'identifiquei', 'apresento'), listando ABSOLUTAMENTE TODAS as linhas de códigos NBS oficiais vinculadas a este subitem sem omitir nenhuma, crie exemplos práticos reais para cada linha, inclua o parágrafo humano de valorização do contador e forneça o bloco JSON oculto correspondente.
+Gere a resposta de forma direta e natural em PRIMEIRA PESSOA DO SINGULAR (ex: 'Analisei a sua dúvida...', 'identifiquei o subitem...'), sem citar termos técnicos como linguagem natural ou varredura de linhas. Apresente todos os códigos oficiais, exemplos práticos reais, o parágrafo de valorização do contador e o bloco JSON oculto.
 """
   else:
     instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
-O utilizador fez uma consulta em linguagem natural: '{texto_processado}'.
-Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira pessoa do singular o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados, listando todas as linhas de forma exaustiva (sem resumos ou supressões). Apresente a tabela correspondente, os exemplos práticos reais, finalize com o parágrafo humano de valorização do contador e forneça o bloco JSON oculto. Se o texto for completamente fora do tema de tributação ou LC 116, aplique a diretriz de recusa educada.
+O utilizador fez a seguinte consulta: '{texto_processado}'.
+Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira pessoa do singular o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados, listando todas as linhas de forma exaustiva e sem comentários sobre o processo interno de busca. Apresente a tabela correspondente, os exemplos práticos reais, finalize com o parágrafo humano de valorização do contador e forneça o bloco JSON oculto. Se o texto for completamente fora do tema de tributação ou LC 116, aplique a diretriz de recusa educada.
 """
 
   system_proxy_final = {
@@ -394,7 +390,6 @@ Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira
   mensagens_para_ia = [system_proxy_final] + historico_chat
 
   try:
-    # Adicionado max_tokens=4000 para permitir respostas extensas sem truncar listas longas
     resposta_modelo = modelo.chat.completions.create(
         messages=mensagens_para_ia,
         model="gemini-flash-lite-latest",
