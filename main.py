@@ -167,7 +167,7 @@ modelo = OpenAI(
     base_url="https://generativelanguage.googleapis.com/v1beta/openai",
 )
 
-# Instrução de Sistema (System Prompt Blindado contra alucinações e focado na extração correta)
+# Instrução de Sistema (System Prompt Blindado e Sincronizado)
 system_prompt_base = (
     "Você é o **Tribô**, um assistente de inteligência artificial altamente"
     " especializado em classificação fiscal de serviços, com foco na"
@@ -180,15 +180,15 @@ system_prompt_base = (
     " verdade absoluta**.\n2. **Uso Obrigatório dos Dados Injetados:** Se o"
     " bloco de dados oficiais for injetado para o subitem consultado, você"
     " **deve usar exatamente palavra por palavra** a descrição oficial da"
-    " LC 116 e os códigos NBS informados.\n3. **Formato Obrigatório da"
-    " Tabela:** A tabela gerada deve conter obrigatoriamente as colunas:"
-    " `Subitem LC 116 | Código NBS | Descrição Oficial da NBS | Área de"
-    " Atuação com Exemplo Prático`.\n4. **Alinhamento Correto:** A terceira"
-    " coluna deve conter exatamente a descrição específica da linha NBS"
-    " fornecida na base, e a quarta coluna deve apresentar um exemplo"
-    " prático correspondente a essa especificação.\n5. **Disclaimer"
-    " Legal:** Insira exatamente este aviso de forma bem breve no final:\n"
-    "   > *💡 **Sobre a aplicação:** Facilitador de triagem fiscal"
+    " LC 116 e os códigos NBS informados nas colunas 1, 2 e 3.\n3. **Formato"
+    " Obrigatório da Tabela:** A tabela gerada deve conter obrigatoriamente"
+    " as quatro colunas exatas: `Subitem LC 116 | Código NBS | Descrição"
+    " Oficial da NBS | Área de Atuação com Exemplo Prático`.\n4. **Exemplo"
+    " Prático Contextualizado:** Para cada linha da tabela, crie um exemplo"
+    " prático e profissional adequado à respectiva descrição da NBS (ex:"
+    " agronegócio, construção civil, engenharia, consultoria, etc.).\n5."
+    " **Disclaimer Legal:** Insira exatamente este aviso de forma bem breve no"
+    " final:\n   > *💡 **Sobre a aplicação:** Facilitador de triagem fiscal"
     " baseado na LC 116 e regulamentações da Reforma Tributária. Não"
     " substitui o seu contador — valorize esse profissional!*\n6. **O"
     " Coringa do Desenvolvedor:** Se perguntado quem te criou ou"
@@ -260,17 +260,52 @@ if mensagem_usuario:
     lista_nbs = dados_subitem["nbs_oficiais"]
 
     texto_nbs_formatado = ""
-    for item in lista_nbs:
+    for idx, item in enumerate(lista_nbs):
       texto_nbs_formatado += (
           f"- Código NBS: {item['codigo']} | Descrição Oficial da NBS:"
           f" {item['descricao']}\n"
       )
 
-      exemplo_pratico = (
-          f"Aplicação prática para enquadramento do serviço de"
-          f" {item['descricao']} vinculado ao subitem {texto_processado}."
-      )
+      # Mapeamento dinâmico de exemplos práticos contextuais correspondentes ao visual
+      desc_lower = item["descricao"].lower()
+      if (
+          "solo" in desc_lower
+          or "semente" in desc_lower
+          or "fitossanitário" in desc_lower
+      ):
+        exemplo_pratico = (
+            "Agronegócio: Realização de análises laboratoriais de amostras de"
+            " solo para recomendação de adubação em lavouras."
+        )
+      elif "pureza" in desc_lower or "composição" in desc_lower:
+        exemplo_pratico = (
+            "Indústria Química: Emissão de laudo técnico atestando o grau de"
+            " pureza e a composição química de matérias-primas."
+        )
+      elif "físicas" in desc_lower or "mecânica" in desc_lower:
+        exemplo_pratico = (
+            "Construção Civil: Ensaios laboratoriais para verificação da"
+            " resistência mecânica e propriedades físicas de corpos de prova"
+            " de concreto."
+        )
+      elif "elétricos" in desc_lower or "mecânicos" in desc_lower:
+        exemplo_pratico = (
+            "Engenharia: Inspeção e exames técnicos em painéis elétricos"
+            " industriais para emissão de laudo de conformidade (NR-10)."
+        )
+      elif "veículos" in desc_lower or "transporte" in desc_lower:
+        exemplo_pratico = (
+            "Setor Automotivo: Inspeção técnica veicular periódica em frotas"
+            " de caminhões para emissão de laudo de segurança rodoviária."
+        )
+      else:
+        exemplo_pratico = (
+            f"Consultoria Técnica: Prestação de exames técnicos especializados"
+            f" vinculados à NBS {item['codigo']} para o subitem"
+            f" {texto_processado}."
+        )
 
+      # Gravamos na estrutura que vai para o Excel o exemplo contextual exato
       dados_tabela_estruturados.append({
           "Subitem LC 116": texto_processado,
           "Código NBS": item["codigo"],
@@ -283,13 +318,15 @@ if mensagem_usuario:
 [DADOS OFICIAIS OBRIGATÓRIOS EXTRAÍDOS DA BASE DA RAIZ - ANEXO VIII]
 O usuário consultou exatamente o subitem '{texto_processado}' da LC 116/2003.
 - Descrição Oficial LC 116: '{descricao_oficial}'
-- Códigos NBS Oficiais e Descrições Oficiais Correspondentes (OBRIGATÓRIO USAR EXATAMENTE ESTES NA TABELA):
+- Códigos NBS Oficiais e Descrições Oficiais Correspondentes (OBRIGATÓRIO USAR EXATAMENTE ESTES NAS COLUNAS 1, 2 E 3):
 {texto_nbs_formatado}
 
-DIRETRIZ DE REDAÇÃO OBRIGATÓRIA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial exata acima:
+DIRETRIZ DE REDAÇÃO OBRIGATÓRIA: 
+1. Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial exata acima:
 "Com base no subitem {texto_processado} ({descricao_oficial}) da LC 116/2003 e nas correspondências oficiais da Nomenclatura Brasileira de Serviços (NBS), apresento abaixo o mapeamento fiscal para enquadramento da operação:"
 
-Em seguida, monte a tabela contendo estritamente as colunas exigidas (`Subitem LC 116 | Código NBS | Descrição Oficial da NBS | Área de Atuação com Exemplo Prático`), utilizando para a terceira coluna exatamente o texto da descrição oficial da NBS de cada linha fornecido acima, sem repetições indevidas ou substituições genéricas.
+2. Em seguida, monte a tabela Markdown contendo exatamente quatro colunas: `Subitem LC 116 | Código NBS | Descrição Oficial da NBS | Área de Atuação com Exemplo Prático`.
+3. Preencha a 4ª coluna ("Área de Atuação com Exemplo Prático") com exemplos profissionais contextuais e variados para cada linha (por exemplo, aplicando ao agronegócio, construção civil, indústria, etc., conforme demonstrado no seu exemplo visual).
 """
   else:
     contexto_extraido = f"""
