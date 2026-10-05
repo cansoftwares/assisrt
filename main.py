@@ -194,7 +194,7 @@ for subitem_k, info_v in dicionario_lc116.items():
         f" {nbs_item['descricao']}\n"
     )
 
-# Instrução de Sistema atualizada com a exigência estrita de 1ª pessoa do singular
+# Instrução de Sistema com tom em 1ª pessoa do singular
 system_prompt_base = (
     "Você é o **Tribô**, um assistente de inteligência artificial altamente"
     " especializado em classificação fiscal de serviços, com foco na"
@@ -287,10 +287,16 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
           df_resposta.to_excel(writer, index=False, sheet_name="Enquadramento")
         excel_data = output.getvalue()
 
+        # Nome profissional atualizado conforme solicitado
+        subitem_referencia = mensagem.get("subitem_ref", "Geral")
+        nome_arquivo_excel = (
+            f"Relatorio_NBS_Inteligente_-_Subitem_{subitem_referencia}.xlsx"
+        )
+
         st.download_button(
-            label="📥 Baixar Planilha em Excel (.xlsx)",
+            label="📥 Baixar Relatório em Excel (.xlsx)",
             data=excel_data,
-            file_name=f"enquadramento_nbs_{idx}.xlsx",
+            file_name=nome_arquivo_excel,
             mime=(
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             ),
@@ -312,6 +318,7 @@ if mensagem_usuario:
 
   texto_processado = mensagem_usuario.strip()
   dados_tabela_estruturados = []
+  subitem_identificado_cache = "Geral"
 
   # Verificação flexível de subitem direto
   subitem_encontrado_direto = None
@@ -321,6 +328,7 @@ if mensagem_usuario:
       break
 
   if subitem_encontrado_direto:
+    subitem_identificado_cache = subitem_encontrado_direto
     info_sub = dicionario_lc116[subitem_encontrado_direto]
     instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
@@ -365,8 +373,12 @@ Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira
       dados_json = json.loads(json_str)
       if "dados_tabela" in dados_json:
         for item in dados_json["dados_tabela"]:
+          sub_val = item.get("subitem", "")
+          if sub_val and subitem_identificado_cache == "Geral":
+            subitem_identificado_cache = sub_val
+
           dados_tabela_estruturados.append({
-              "Subitem LC 116": item.get("subitem", ""),
+              "Subitem LC 116": sub_val,
               "Código NBS": item.get("codigo_nbs", ""),
               "Descrição Oficial da NBS": item.get("descricao_nbs", ""),
               "Área de Atuação com Exemplo Prático": item.get(
@@ -386,6 +398,7 @@ Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira
         "role": "assistant",
         "content": resposta_ia_exibicao,
         "tabela_dados": dados_tabela_estruturados,
+        "subitem_ref": subitem_identificado_cache,
     }
     st.session_state["lista_mensagens"].append(mensagem_ia)
 
