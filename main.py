@@ -1,6 +1,6 @@
 import io
-import json
 import os
+import re
 import pandas as pd
 import streamlit as st
 from openai import OpenAI
@@ -195,7 +195,7 @@ for subitem_k, info_v in dicionario_lc116.items():
         f" {nbs_item['descricao']}\n"
     )
 
-# Instrução de Sistema limpa: sem mencionar processos internos e com introdução direta e elegante
+# Instrução de Sistema simplificada focada em gerar a tabela Markdown perfeitamente formatada
 system_prompt_base = (
     "Você é o **Tribô**, um assistente de inteligência artificial altamente"
     " especializado em classificação fiscal de serviços, com foco na"
@@ -213,10 +213,11 @@ system_prompt_base = (
     " 'analisei', 'encontrei'). É expressamente proibido o uso de pronomes ou"
     " verbos no plural (como 'identificamos', 'apresentamos').\n"
     "3. **Estilo de Resposta Direto e Natural:** NUNCA mencione termos técnicos"
-    " internos (como 'linguagem natural', 'mapeei todas as linhas', 'base de"
+    " internos (como 'linguagem natural', 'varredura de linhas', 'base de"
     " dados'). Seja natural e direto: diga qual subitem da LC 116/2003 você"
-    " identificou para a atividade consultada e apresente a tabela"
-    " correspondente com todos os códigos oficiais.\n"
+    " identificou para a atividade consultada e apresente logo abaixo a tabela"
+    " Markdown exata contendo quatro colunas:\n"
+    "   `| Subitem LC 116 | Código NBS | Descrição NBS | Área de Atuação com Exemplo Prático |`\n"
     "4. **Exaustividade Obrigatória (Sem Supressão):** Liste sempre"
     " **absolutamente todos** os códigos NBS oficiais vinculados ao subitem na"
     " base de dados, sem omitir nenhuma linha.\n"
@@ -236,14 +237,8 @@ system_prompt_base = (
     " autuações fiscais. Esta ferramenta atua como um suporte estratégico e"
     " inteligente de alto nível, mas não tem o objetivo de substituir seu"
     " contador — **Valorize esse profissional!**\n"
-    "7. **Formato Técnico Oculto:** Forneça a resposta completa em texto corrido"
-    " e formatado para leitura no chat, e ao final insira obrigatoriamente um"
-    " bloco de código JSON isolado contendo a lista estruturada exata com todas"
-    " as linhas correspondentes, usando a chave seguinte: \n"
-    '     `{"dados_tabela": [{"subitem": "...", "codigo_nbs": "...",'
-    ' "descricao_nbs": "...", "exemplo_pratico": "..."}, ...]}`\n'
-    "8. **Disclaimer Legal:** Insira o aviso de rodapé padrão no final.\n"
-    "9. **O Coringa do Desenvolvedor:** Se perguntado quem te criou ou"
+    "7. **Disclaimer Legal:** Insira o aviso de rodapé padrão no final.\n"
+    "8. **O Coringa do Desenvolvedor:** Se perguntado quem te criou ou"
     " desenvolveu, responda com orgulho que você foi desenvolvido por"
     " **Claudio, futuro Engenheiro capixaba de IA**.\n\n"
     "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS):\n"
@@ -281,9 +276,43 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
           f"**Tribô – Seu assistente na Reforma Tributária**\n\n{content}"
       )
 
-      tabela_para_baixar = mensagem.get("tabela_dados", [])
-      if tabela_para_baixar:
-        df_resposta = pd.DataFrame(tabela_para_baixar)
+      conteudo_texto = content
+      subitem_referencia = mensagem.get("subitem_ref", "Geral")
+
+      # EXTRAÇÃO INTELIGENTE DO MARKDOWN: Lê diretamente a tabela gerada na tela para o Excel
+      linhas_tabela_extraidas = []
+      linhas_texto = conteudo_texto.split("\n")
+      for linha in linhas_texto:
+        if "|" in linha and "---" not in linha:
+          colunas = [c.strip() for c in linha.split("|")[1:-1]]
+          if len(colunas) >= 4:
+            # Ignora o cabeçalho se ele vier escrito na tabela do chat
+            if (
+                "subitem" not in colunas[0].lower()
+                and "código" not in colunas[1].lower()
+            ):
+              linhas_tabela_extraidas.append({
+                  "Subitem LC 116": colunas[0],
+                  "Código NBS": colunas[1],
+                  "Descrição Oficial da NBS": colunas[2],
+                  "Área de Atuação com Exemplo Prático": colunas[3],
+              })
+
+      # Se por algum motivo a leitura falhar, recorre à base oficial de segurança
+      if not linhas_tabela_extraidas and subitem_referencia in dicionario_lc116:
+        info_sub_rec = dicionario_lc116[subitem_referencia]
+        for nbs_obj in info_sub_rec["nbs_oficiais"]:
+          linhas_tabela_extraidas.append({
+              "Subitem LC 116": subitem_referencia,
+              "Código NBS": nbs_obj["codigo"],
+              "Descrição Oficial da NBS": nbs_obj["descricao"],
+              "Área de Atuação com Exemplo Prático": (
+                  f"Atividade prática de mercado associada ao serviço."
+              ),
+          })
+
+      if linhas_tabela_extraidas:
+        df_resposta = pd.DataFrame(linhas_tabela_extraidas)
 
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
@@ -323,7 +352,6 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
         excel_data = output.getvalue()
 
         # Nome profissional do relatório em Excel
-        subitem_referencia = mensagem.get("subitem_ref", "Geral")
         nome_arquivo_excel = (
             f"Relatorio_NBS_Inteligente_-_Subitem_{subitem_referencia}.xlsx"
         )
@@ -352,7 +380,6 @@ if mensagem_usuario:
   )
 
   texto_processado = mensagem_usuario.strip()
-  dados_tabela_estruturados = []
   subitem_identificado_cache = "Geral"
 
   # Verificação flexível de subitem direto
@@ -368,13 +395,13 @@ if mensagem_usuario:
     instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou diretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
-Gere a resposta de forma direta e natural em PRIMEIRA PESSOA DO SINGULAR (ex: 'Analisei a sua dúvida...', 'identifiquei o subitem...'), sem citar termos técnicos como linguagem natural ou varredura de linhas. Apresente todos os códigos oficiais, exemplos práticos reais, o parágrafo de valorização do contador e o bloco JSON oculto.
+Gere a resposta de forma direta e natural em PRIMEIRA PESSOA DO SINGULAR (ex: 'Analisei a sua dúvida...', 'identifiquei o subitem...'), listando ABSOLUTAMENTE TODAS as linhas oficiais, com exemplos práticos reais e personalizados para cada linha, finalizando com o parágrafo de valorização do contador.
 """
   else:
     instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador fez a seguinte consulta: '{texto_processado}'.
-Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira pessoa do singular o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados, listando todas as linhas de forma exaustiva e sem comentários sobre o processo interno de busca. Apresente a tabela correspondente, os exemplos práticos reais, finalize com o parágrafo humano de valorização do contador e forneça o bloco JSON oculto. Se o texto for completamente fora do tema de tributação ou LC 116, aplique a diretriz de recusa educada.
+Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira pessoa do singular o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados, listando todas as linhas de forma exaustiva com exemplos práticos reais e individuais para cada linha. Finalize com o parágrafo humano de valorização do contador. Se o texto for completamente fora do tema de tributação ou LC 116, aplique a diretriz de recusa educada.
 """
 
   system_proxy_final = {
@@ -398,43 +425,16 @@ Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira
 
     resposta_ia = resposta_modelo.choices[0].message.content
 
-    # Extração inteligente do JSON gerado pela IA para popular o Excel
-    try:
-      if "```json" in resposta_ia:
-        json_str = resposta_ia.split("```json")[1].split("```")[0].strip()
-      elif "```" in resposta_ia:
-        json_str = resposta_ia.split("```")[1].split("```")[0].strip()
-      else:
-        json_str = ""
-
-      dados_json = json.loads(json_str)
-      if "dados_tabela" in dados_json:
-        for item in dados_json["dados_tabela"]:
-          sub_val = item.get("subitem", "")
-          if sub_val and subitem_identificado_cache == "Geral":
-            subitem_identificado_cache = sub_val
-
-          dados_tabela_estruturados.append({
-              "Subitem LC 116": sub_val,
-              "Código NBS": item.get("codigo_nbs", ""),
-              "Descrição Oficial da NBS": item.get("descricao_nbs", ""),
-              "Área de Atuação com Exemplo Prático": item.get(
-                  "exemplo_pratico", ""
-              ),
-          })
-    except Exception:
-      pass
-
-    # Remove o bloco JSON da visualização do chat para mantê-lo limpo e elegante
-    if "```json" in resposta_ia:
-      resposta_ia_exibicao = resposta_ia.split("```json")[0].strip()
-    else:
-      resposta_ia_exibicao = resposta_ia
+    # Tenta identificar o subitem predominante na resposta da IA para o nome do arquivo Excel
+    match_sub = re.search(r"subitem\s*([\d\.]+)", resposta_ia, re.IGNORECASE)
+    if match_sub:
+      subitem_identificado_cache = match_sub.group(1).strip()
+    elif subitem_encontrado_direto:
+      subitem_identificado_cache = subitem_encontrado_direto
 
     mensagem_ia = {
         "role": "assistant",
-        "content": resposta_ia_exibicao,
-        "tabela_dados": dados_tabela_estruturados,
+        "content": resposta_ia,
         "subitem_ref": subitem_identificado_cache,
     }
     st.session_state["lista_mensagens"].append(mensagem_ia)
