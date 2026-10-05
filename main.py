@@ -46,7 +46,7 @@ st.markdown(
         border: 1px solid rgba(49, 51, 63, 0.1);
     }
 
-    /* Mensagem do Usuário (Alinhada à Direita com destaque corporativo) */
+    /* Mensagem do Utilizador (Alinhada à Direita com destaque corporativo) */
     [data-testid="stChatMessage-user"] {
         background-color: #f0f2f6 !important; 
         margin-left: auto !important;
@@ -54,7 +54,7 @@ st.markdown(
         flex-direction: row-reverse;
     }
     
-    /* Inverte a ordem do avatar do usuário para ficar na direita */
+    /* Inverte a ordem do avatar do utilizador para ficar na direita */
     [data-testid="stChatMessage-user"] > div:first-child {
         flex-direction: row-reverse;
     }
@@ -109,16 +109,18 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.markdown(
-    "Consulte códigos de serviços da LC 116/2003, descrições normativas oficiais"
-    " e correspondências detalhadas de equivalência NBS para o ecossistema"
-    " tributário."
+    "Consulte códigos de serviços da LC 116/2003, descrições normativas"
+    " oficiais e correspondências detalhadas de equivalência NBS para o"
+    " ecossistema tributário."
 )
 
 
-# Função para carregar o Anexo VIII da raiz do projeto mapeando múltiplos códigos NBS por subitem
+# Função para carregar o Anexo VIII da raiz do projeto mapeando corretamente cada linha da NBS
 @st.cache_data
 def carregar_base_lc116():
-  caminho_excel = "AnexoVIII-CorrelacaoItemNBSIndOpCClassTrib_IBSCBS_V1.00.00.xlsx"
+  caminho_excel = (
+      "AnexoVIII-CorrelacaoItemNBSIndOpCClassTrib_IBSCBS_V1.00.00.xlsx"
+  )
   if os.path.exists(caminho_excel):
     try:
       df = pd.read_excel(caminho_excel, sheet_name="tabela geral", dtype=str)
@@ -169,29 +171,30 @@ modelo = OpenAI(
 system_prompt_base = (
     "Você é o **Tribô**, um assistente de inteligência artificial altamente"
     " especializado em classificação fiscal de serviços, com foco na"
-    " Nomenclatura Brasileira de Serviços (NBS) vinculada à Lei Complementar"
-    " 116/2003, aos Anexos oficiais e ao ecossistema da Reforma Tributária.\n\n"
+    " Nomenclatura Brasileira de Serviços (NBS) vinculada à Lei"
+    " Complementar 116/2003, aos Anexos oficiais e ao ecossistema da Reforma"
+    " Tributária.\n\n"
     "🚨 **REGRA SUPREMA DE ANTI-ALUCINAÇÃO E FONTE ÚNICA:**\n"
-    "1. **Proibido Consultar a Internet para Conceitos Oficiais:** A base de"
-    " dados local fornecida pelo arquivo Excel na raiz é a sua **única verdade"
-    " absoluta**.\n2. **Uso Obrigatório dos Dados Injetados:** Se o bloco de"
-    " dados oficiais for injetado para o subitem consultado, você **deve usar"
-    " exatamente palavra por palavra** a descrição oficial da LC 116 e os"
-    " códigos NBS informados.\n3. **Formato Obrigatório da Tabela:** A tabela"
-    " gerada deve conter obrigatoriamente as colunas: `Subitem LC 116 | Código"
-    " NBS | Descrição Oficial da NBS | Área de Atuação com Exemplo"
-    " Prático`.\n4. **Diversificação dos Exemplos Práticos:** Para cada código"
-    " NBS listado na tabela, você deve criar um **exemplo prático de atuação"
-    " específico e distinto** correspondente àquela ramificação (por exemplo,"
-    " separando balanço patrimonial para contabilidade, escrituração fiscal"
-    " para escrita mercantil e folha de pagamento para departamento"
-    " pessoal).\n5. **Disclaimer Legal:** Insira exatamente este aviso de forma"
-    " bem breve no final:\n   > *💡 **Sobre a aplicação:** Facilitador de"
-    " triagem fiscal baseado na LC 116 e regulamentações da Reforma Tributária."
-    " Não substitui o seu contador — valorize esse profissional!*\n6. **O"
-    " Coringa do Desenvolvedor:** Se perguntado quem te criou ou desenvolveu,"
-    " responda com orgulho que você foi desenvolvido por **Claudio, futuro"
-    " Engenheiro capixaba de IA**, para otimizar a rotina fiscal e tributária."
+    "1. **Proibido Consultar a Internet para Conceitos Oficiais:** A base"
+    " de dados local fornecida pelo arquivo Excel na raiz é a sua **única"
+    " verdade absoluta**.\n2. **Uso Obrigatório dos Dados Injetados:** Se o"
+    " bloco de dados oficiais for injetado para o subitem consultado, você"
+    " **deve usar exatamente palavra por palavra** a descrição oficial da"
+    " LC 116 e os códigos NBS informados.\n3. **Formato Obrigatório da"
+    " Tabela:** A tabela gerada deve conter obrigatoriamente as colunas:"
+    " `Subitem LC 116 | Código NBS | Descrição Oficial da NBS | Área de"
+    " Atuação com Exemplo Prático`.\n4. **Alinhamento Correto:** A terceira"
+    " coluna deve conter exatamente a descrição específica da linha NBS"
+    " fornecida na base, e a quarta coluna deve apresentar um exemplo"
+    " prático correspondente a essa especificação.\n5. **Disclaimer"
+    " Legal:** Insira exatamente este aviso de forma bem breve no final:\n"
+    "   > *💡 **Sobre a aplicação:** Facilitador de triagem fiscal"
+    " baseado na LC 116 e regulamentações da Reforma Tributária. Não"
+    " substitui o seu contador — valorize esse profissional!*\n6. **O"
+    " Coringa do Desenvolvedor:** Se perguntado quem te criou ou"
+    " desenvolveu, responda com orgulho que você foi desenvolvido por"
+    " **Claudio, futuro Engenheiro capixaba de IA**, para otimizar a rotina"
+    " fiscal e tributária."
 )
 
 # Session State = Memória do Streamlit
@@ -223,7 +226,9 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
 
           output = io.BytesIO()
           with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            df_resposta.to_excel(writer, index=False, sheet_name="Enquadramento")
+            df_resposta.to_excel(
+                writer, index=False, sheet_name="Enquadramento"
+            )
           excel_data = output.getvalue()
 
           st.download_button(
@@ -236,7 +241,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
               key=f"download_xlsx_{idx}",
           )
 
-# Entrada do usuário
+# Entrada do utilizador
 mensagem_usuario = st.chat_input(
     "Escreva sua dúvida ou código (ex: 17.02)..."
 )
@@ -255,47 +260,16 @@ if mensagem_usuario:
     lista_nbs = dados_subitem["nbs_oficiais"]
 
     texto_nbs_formatado = ""
-    for idx_item, item in enumerate(lista_nbs):
+    for item in lista_nbs:
       texto_nbs_formatado += (
           f"- Código NBS: {item['codigo']} | Descrição Oficial da NBS:"
           f" {item['descricao']}\n"
       )
 
-      # Atribui exemplos práticos dinâmicos e específicos baseados na linha/ramificação correspondente
-      if (
-          texto_processado == "17.19"
-          and len(lista_nbs) >= 3
-          and idx_item == 0
-      ):
-        exemplo_pratico = (
-            "Elaboração de balanços patrimoniais, demonstrações contábeis e"
-            " apuração de tributos para empresas do Lucro Real ou Presumido."
-        )
-      elif (
-          texto_processado == "17.19"
-          and len(lista_nbs) >= 3
-          and idx_item == 1
-      ):
-        exemplo_pratico = (
-            "Assessoria Fiscal e Comercial: Lançamento de notas fiscais,"
-            " conciliação bancária e organização de livros fiscais digitais"
-            " (SPED)."
-        )
-      elif (
-          texto_processado == "17.19"
-          and len(lista_nbs) >= 3
-          and idx_item == 2
-      ):
-        exemplo_pratico = (
-            "Departamento Pessoal: Cálculo de salários, férias, rescisões,"
-            " emissão de guias de encargos sociais (FGTS, INSS) e envio do"
-            " eSocial."
-        )
-      else:
-        exemplo_pratico = (
-            f"Aplicação prática para enquadramento do serviço de"
-            f" {item['descricao']} vinculado ao subitem {texto_processado}."
-        )
+      exemplo_pratico = (
+          f"Aplicação prática para enquadramento do serviço de"
+          f" {item['descricao']} vinculado ao subitem {texto_processado}."
+      )
 
       dados_tabela_estruturados.append({
           "Subitem LC 116": texto_processado,
@@ -304,22 +278,18 @@ if mensagem_usuario:
           "Área de Atuação com Exemplo Prático": exemplo_pratico,
       })
 
-    exemplos_estruturados_texto = ""
-    for linha_est in dados_tabela_estruturados:
-      exemplos_estruturados_texto += f"- NBS {linha_est['Código NBS']} -> Exemplo: {linha_est['Área de Atuação com Exemplo Prático']}\n"
-
     contexto_extraido = f"""
 
 [DADOS OFICIAIS OBRIGATÓRIOS EXTRAÍDOS DA BASE DA RAIZ - ANEXO VIII]
 O usuário consultou exatamente o subitem '{texto_processado}' da LC 116/2003.
 - Descrição Oficial LC 116: '{descricao_oficial}'
-- Códigos NBS Oficiais e Exemplos Práticos Correspondentes (OBRIGATÓRIO USAR EXATAMENTE ESTES NA TABELA):
-{exemplos_estruturados_texto}
+- Códigos NBS Oficiais e Descrições Oficiais Correspondentes (OBRIGATÓRIO USAR EXATAMENTE ESTES NA TABELA):
+{texto_nbs_formatado}
 
 DIRETRIZ DE REDAÇÃO OBRIGATÓRIA: Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial exata acima:
 "Com base no subitem {texto_processado} ({descricao_oficial}) da LC 116/2003 e nas correspondências oficiais da Nomenclatura Brasileira de Serviços (NBS), apresento abaixo o mapeamento fiscal para enquadramento da operação:"
 
-Em seguida, monte a tabela contendo estritamente as colunas exigidas, preenchendo a quarta coluna com os respectivos exemplos práticos específicos listados acima para cada código NBS.
+Em seguida, monte a tabela contendo estritamente as colunas exigidas (`Subitem LC 116 | Código NBS | Descrição Oficial da NBS | Área de Atuação com Exemplo Prático`), utilizando para a terceira coluna exatamente o texto da descrição oficial da NBS de cada linha fornecido acima, sem repetições indevidas ou substituições genéricas.
 """
   else:
     contexto_extraido = f"""
