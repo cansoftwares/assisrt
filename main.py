@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import re
 import pandas as pd
@@ -195,7 +196,7 @@ for subitem_k, info_v in dicionario_lc116.items():
         f" {nbs_item['descricao']}\n"
     )
 
-# Instrução de Sistema simplificada focada em gerar a tabela Markdown perfeitamente formatada
+# Instrução de Sistema atualizada sem o disclaimer de rodapé
 system_prompt_base = (
     "Você é o **Tribô**, um assistente de inteligência artificial altamente"
     " especializado em classificação fiscal de serviços, com foco na"
@@ -237,7 +238,12 @@ system_prompt_base = (
     " autuações fiscais. Esta ferramenta atua como um suporte estratégico e"
     " inteligente de alto nível, mas não tem o objetivo de substituir seu"
     " contador — **Valorize esse profissional!**\n"
-    "7. **Disclaimer Legal:** Insira o aviso de rodapé padrão no final.\n"
+    "7. **Formato Técnico Duplo Obrigatório:** Forneça a resposta completa para"
+    " visualização no chat e, ao final de tudo, inclua obrigatoriamente um bloco"
+    " de código JSON isolado exato contendo **todas** las linhas da tabela"
+    " (com suas descrições e exemplos ricos) usando a chave exata: \n"
+    '     `{"dados_tabela": [{"subitem": "...", "codigo_nbs": "...",'
+    ' "descricao_nbs": "...", "exemplo_pratico": "..."}, ...]}`\n'
     "8. **O Coringa do Desenvolvedor:** Se perguntado quem te criou ou"
     " desenvolveu, responda com orgulho que você foi desenvolvido por"
     " **Claudio, futuro Engenheiro capixaba de IA**.\n\n"
@@ -276,82 +282,55 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
           f"**Tribô – Seu assistente na Reforma Tributária**\n\n{content}"
       )
 
-      conteudo_texto = content
+      tabela_para_baixar = mensagem.get("tabela_dados", [])
       subitem_referencia = mensagem.get("subitem_ref", "Geral")
 
-      # EXTRAÇÃO INTELIGENTE DO MARKDOWN: Lê diretamente a tabela gerada na tela para o Excel
-      linhas_tabela_extraidas = []
-      linhas_texto = conteudo_texto.split("\n")
-      for linha in linhas_texto:
-        if "|" in linha and "---" not in linha:
-          colunas = [c.strip() for c in linha.split("|")[1:-1]]
-          if len(colunas) >= 4:
-            # Ignora o cabeçalho se ele vier escrito na tabela do chat
-            if (
-                "subitem" not in colunas[0].lower()
-                and "código" not in colunas[1].lower()
-            ):
-              linhas_tabela_extraidas.append({
-                  "Subitem LC 116": colunas[0],
-                  "Código NBS": colunas[1],
-                  "Descrição Oficial da NBS": colunas[2],
-                  "Área de Atuação com Exemplo Prático": colunas[3],
-              })
-
-      # Se por algum motivo a leitura falhar, recorre à base oficial de segurança
-      if not linhas_tabela_extraidas and subitem_referencia in dicionario_lc116:
+      if not tabela_para_baixar and subitem_referencia in dicionario_lc116:
         info_sub_rec = dicionario_lc116[subitem_referencia]
+        tabela_para_baixar = []
         for nbs_obj in info_sub_rec["nbs_oficiais"]:
-          linhas_tabela_extraidas.append({
+          tabela_para_baixar.append({
               "Subitem LC 116": subitem_referencia,
               "Código NBS": nbs_obj["codigo"],
               "Descrição Oficial da NBS": nbs_obj["descricao"],
               "Área de Atuação com Exemplo Prático": (
-                  f"Atividade prática de mercado associada ao serviço."
+                  f"Execução de serviços especializados e operações de mercado"
+                  f" para {info_sub_rec['descricao_lc'].lower()}."
               ),
           })
 
-      if linhas_tabela_extraidas:
-        df_resposta = pd.DataFrame(linhas_tabela_extraidas)
+      if tabela_para_baixar:
+        df_resposta = pd.DataFrame(tabela_para_baixar)
 
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
           df_resposta.to_excel(writer, index=False, sheet_name="Enquadramento")
 
-          # Estilização avançada do Excel (larguras, alinhamentos e cabeçalho em negrito)
           workbook = writer.book
           worksheet = writer.sheets["Enquadramento"]
 
-          # Larguras personalizadas solicitadas: A=14, B=12, C=40, D=60
           colunas_larguras = {"A": 14, "B": 12, "C": 40, "D": 60}
           for coluna, largura in colunas_larguras.items():
             worksheet.column_dimensions[coluna].width = largura
 
-          # Alinhamentos e fontes personalizados
           for row_idx, row in enumerate(worksheet.iter_rows(min_row=1), start=1):
             for col_idx, cell in enumerate(row, start=1):
               if row_idx == 1:
-                # Cabeçalho da linha 1 em negrito e centralizado
                 cell.font = Font(bold=True)
                 cell.alignment = Alignment(
                     horizontal="center", vertical="center", wrap_text=True
                 )
               else:
-                # Linhas de dados conforme regras solicitadas
                 if col_idx in [1, 2]:
-                  # Colunas A e B: Centralizadas
                   cell.alignment = Alignment(
                       horizontal="center", vertical="top", wrap_text=True
                   )
                 else:
-                  # Colunas C e D: Alinhadas à esquerda (padrão) com quebra de linha
                   cell.alignment = Alignment(
                       horizontal="left", vertical="top", wrap_text=True
                   )
 
         excel_data = output.getvalue()
-
-        # Nome profissional do relatório em Excel
         nome_arquivo_excel = (
             f"Relatorio_NBS_Inteligente_-_Subitem_{subitem_referencia}.xlsx"
         )
@@ -380,9 +359,9 @@ if mensagem_usuario:
   )
 
   texto_processado = mensagem_usuario.strip()
+  dados_tabela_estruturados = []
   subitem_identificado_cache = "Geral"
 
-  # Verificação flexível de subitem direto
   subitem_encontrado_direto = None
   for sub in dicionario_lc116.keys():
     if sub.lower() in texto_processado.lower():
@@ -395,13 +374,13 @@ if mensagem_usuario:
     instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou diretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
-Gere a resposta de forma direta e natural em PRIMEIRA PESSOA DO SINGULAR (ex: 'Analisei a sua dúvida...', 'identifiquei o subitem...'), listando ABSOLUTAMENTE TODAS as linhas oficiais, com exemplos práticos reais e personalizados para cada linha, finalizando com o parágrafo de valorização do contador.
+Gere a resposta de forma direta e natural em PRIMEIRA PESSOA DO SINGULAR (ex: 'Analisei a sua dúvida...', 'identifiquei o subitem...'), listando ABSOLUTAMENTE TODAS as linhas oficiais, com exemplos práticos reais e ricos para cada linha, finalizando com o parágrafo de valorização do contador e preenchendo o JSON oculto com exatidão.
 """
   else:
     instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador fez a seguinte consulta: '{texto_processado}'.
-Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira pessoa do singular o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados, listando todas as linhas de forma exaustiva com exemplos práticos reais e individuais para cada linha. Finalize com o parágrafo humano de valorização do contador. Se o texto for completamente fora do tema de tributação ou LC 116, aplique a diretriz de recusa educada.
+Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira pessoa do singular o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados, listando todas as linhas de forma exaustiva com exemplos práticos reais e ricos para cada linha. Finalize com o parágrafo humano de valorização do contador e preencha o JSON oculto correspondente. Se o texto for completamente fora do tema de tributação ou LC 116, aplique a diretriz de recusa educada.
 """
 
   system_proxy_final = {
@@ -425,16 +404,47 @@ Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira
 
     resposta_ia = resposta_modelo.choices[0].message.content
 
-    # Tenta identificar o subitem predominante na resposta da IA para o nome do arquivo Excel
+    try:
+      if "```json" in resposta_ia:
+        json_str = resposta_ia.split("```json")[1].split("```")[0].strip()
+      elif "```" in resposta_ia:
+        json_str = resposta_ia.split("```")[1].split("```")[0].strip()
+      else:
+        json_str = ""
+
+      dados_json = json.loads(json_str)
+      if "dados_tabela" in dados_json:
+        for item in dados_json["dados_tabela"]:
+          sub_val = item.get("subitem", "")
+          if sub_val and subitem_identificado_cache == "Geral":
+            subitem_identificado_cache = sub_val
+
+          dados_tabela_estruturados.append({
+              "Subitem LC 116": sub_val,
+              "Código NBS": item.get("codigo_nbs", ""),
+              "Descrição Oficial da NBS": item.get("descricao_nbs", ""),
+              "Área de Atuação com Exemplo Prático": item.get(
+                  "exemplo_pratico", ""
+              ),
+          })
+    except Exception:
+      pass
+
     match_sub = re.search(r"subitem\s*([\d\.]+)", resposta_ia, re.IGNORECASE)
     if match_sub:
       subitem_identificado_cache = match_sub.group(1).strip()
     elif subitem_encontrado_direto:
       subitem_identificado_cache = subitem_encontrado_direto
 
+    if "```json" in resposta_ia:
+      resposta_ia_exibicao = resposta_ia.split("```json")[0].strip()
+    else:
+      resposta_ia_exibicao = resposta_ia
+
     mensagem_ia = {
         "role": "assistant",
-        "content": resposta_ia,
+        "content": resposta_ia_exibicao,
+        "tabela_dados": dados_tabela_estruturados,
         "subitem_ref": subitem_identificado_cache,
     }
     st.session_state["lista_mensagens"].append(mensagem_ia)
@@ -445,7 +455,6 @@ Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira
   except Exception as e:
     st.error(f"Ocorreu um erro ao consultar a IA: {e}")
 
-# Script disparado dinamicamente para garantir que o input recupere o foco logo após a resposta ser exibida
 if deve_focar_input:
   st.components.v1.html(
       """
