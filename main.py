@@ -180,11 +180,14 @@ system_prompt_base = (
     " verdade absoluta**.\n2. **Uso Exclusivo do Subitem Atual:** Cada consulta"
     " do usuário é totalmente independente. **Ignore completamente** os"
     " exemplos ou tabelas de mensagens anteriores do chat ao gerar a resposta"
-    " atual.\n3. **Uso Obrigatório dos Dados Injetados:** Utilize rigorosamente"
-    " palavra por palavra os dados fornecidos no bloco de contexto atual para o"
-    " subitem consultado.\n4. **Formato Obrigatório da Tabela:** A tabela gerada"
-    " deve conter obrigatoriamente as quatro colunas exatas: `Subitem LC 116 |"
-    " Código NBS | Descrição Oficial da NBS | Área de Atuação com Exemplo"
+    " atual.\n3. **Rigor Técnico Absoluto nos Exemplos Práticos:** A coluna de"
+    " exemplo prático DEVE refletir estritamente a atividade descrita no código"
+    " NBS correspondente. É terminantemente proibido inserir termos genéricos"
+    " (como 'suporte operacional' ou 'consultoria analítica') para códigos"
+    " que tratam de locação, infraestrutura, cessão de direitos, obras ou"
+    " atividades específicas.\n4. **Formato Obrigatório da Tabela:** A tabela"
+    " gerada deve conter obrigatoriamente as quatro colunas exatas: `Subitem LC"
+    " 116 | Código NBS | Descrição Oficial da NBS | Área de Atuação com Exemplo"
     " Prático`.\n5. **Disclaimer Legal:** Insira exatamente este aviso de forma"
     " bem breve no final:\n   > *💡 **Sobre a aplicação:** Facilitador de"
     " triagem fiscal baseado na LC 116 e regulamentações da Reforma Tributária."
@@ -260,90 +263,13 @@ if mensagem_usuario:
     lista_nbs = dados_subitem["nbs_oficiais"]
 
     texto_nbs_formatado = ""
-    for idx, item in enumerate(lista_nbs):
+    for item in lista_nbs:
       cod_nbs = item["codigo"]
       desc_nbs = item["descricao"]
-      desc_lower = desc_nbs.lower()
-
-      # Mapeamento profissional estruturado por Áreas de Atuação e Casos Práticos Reais
-      if (
-          "solo" in desc_lower
-          or "semente" in desc_lower
-          or "fitossanitário" in desc_lower
-      ):
-        exemplo_pratico = (
-            "Agronegócio: Realização de análises laboratoriais físico-químicas"
-            " em amostras de solo e sementes para emissão de laudo de"
-            " recomendação de adubação e controle fitossanitário em lavouras."
-        )
-      elif "pureza" in desc_lower or "composição" in desc_lower:
-        exemplo_pratico = (
-            "Indústria Química: Ensaios laboratoriais e emissão de laudo"
-            " técnico atestando o grau de pureza, teor de umidade e"
-            " composição química de matérias-primas fabris."
-        )
-      elif "físicas" in desc_lower or "mecânica" in desc_lower:
-        exemplo_pratico = (
-            "Construção Civil: Ensaios tecnológicos para verificação da"
-            " resistência à compressão e propriedades físicas de corpos de"
-            " prova de concreto em canteiros de obras."
-        )
-      elif "elétricos" in desc_lower or "mecânicos" in desc_lower:
-        exemplo_pratico = (
-            "Engenharia e Manutenção: Inspeção técnica especializada e exames"
-            " de conformidade em painéis e instalações elétricas industriais"
-            " (Norma NR-10)."
-        )
-      elif "veículos" in desc_lower or "transporte" in desc_lower:
-        exemplo_pratico = (
-            "Setor Automotivo: Vistoria técnica veicular periódica em frotas"
-            " de transporte rodoviário para emissão de laudo de segurança"
-            " estrutural."
-        )
-      elif "contabilidade" in desc_lower or "escrituração" in desc_lower:
-        exemplo_pratico = (
-            "Contabilidade Consultiva: Execução de escrituração contábil"
-            " digital, apuração de tributos federais e entrega de obrigações"
-            " acessórias (SPED)."
-        )
-      elif "folha de pagamento" in desc_lower or "trabalhista" in desc_lower:
-        exemplo_pratico = (
-            "Departamento Pessoal: Gestão mensal de folha de pagamento,"
-            " encargos sociais (eSocial) e rotinas de admissão e rescisão."
-        )
-      elif (
-          "escolta" in desc_lower
-          or "guarda" in desc_lower
-          or "vigilância" in desc_lower
-      ):
-        exemplo_pratico = (
-            "Segurança Patrimonial: Prestação de serviços de escolta armada e"
-            " monitoramento para o transporte rodoviário de cargas sensíveis e"
-            " de alto valor."
-        )
-      elif "consultoria" in desc_lower or "gerenciamento" in desc_lower:
-        exemplo_pratico = (
-            "Consultoria Estratégica: Elaboração de projetos de engenharia e"
-            " planos de gerenciamento de riscos corporativos."
-        )
-      else:
-        exemplo_pratico = (
-            f"Gestão Corporativa: Prestação de serviços técnicos"
-            f" especializados de suporte operacional e consultoria analítica"
-            f" vinculados ao código NBS {cod_nbs}."
-        )
 
       texto_nbs_formatado += (
-          f"- Código NBS: {cod_nbs} | Descrição Oficial da NBS: {desc_nbs} |"
-          f" Exemplo Prático Obrigatório: {exemplo_pratico}\n"
+          f"- Código NBS: {cod_nbs} | Descrição Oficial da NBS: {desc_nbs}\n"
       )
-
-      dados_tabela_estruturados.append({
-          "Subitem LC 116": texto_processado,
-          "Código NBS": cod_nbs,
-          "Descrição Oficial da NBS": desc_nbs,
-          "Área de Atuação com Exemplo Prático": exemplo_pratico,
-      })
 
     contexto_extraido = f"""
 
@@ -351,15 +277,20 @@ if mensagem_usuario:
 O usuário consultou nesta mensagem o subitem '{texto_processado}' da LC 116/2003. 
 ATENÇÃO: Trate esta consulta como um evento único e isolado. Não reutilize dados, tabelas ou exemplos de interações anteriores do histórico.
 - Descrição Oficial LC 116: '{descricao_oficial}'
-- Códigos NBS Oficiais e Exemplos Práticos Específicos para este Subitem (OBRIGATÓRIO USAR EXATAMENTE ESTES DADOS NA TABELA):
+- Códigos NBS Oficiais associados a este Subitem:
 {texto_nbs_formatado}
 
-DIRETRIZ DE REDAÇÃO OBRIGATÓRIA: 
+DIRETRIZ DE REDAÇÃO OBRIGATÓRIA PARA A COLUNA 4 ('Área de Atuação com Exemplo Prático'):
+Para cada código NBS listado acima, você (IA) DEVE criar um exemplo prático de negócio totalmente fiel e contextualizado à respectiva "Descrição Oficial da NBS". 
+- Se a NBS tratar de locação, arrendamento ou direito de passagem de infraestrutura (ex: rodovias, cabos, dutos), o exemplo DEVE ilustrar essa exata operação de infraestrutura (ex: "Infraestrutura de Transporte: Cessão onerosa de direito de uso de faixa de domínio em rodovia para passagem de fibra óptica").
+- Se a NBS tratar de consultoria, o exemplo DEVE refletir consultoria.
+- NUNCA repita a descrição oficial como um eco redundante e NUNCA utilize termos genéricos desconectados do texto da NBS.
+
+DIRETRIZ DE ESTRUTURA DA RESPOSTA:
 1. Na introdução da sua resposta, utilize obrigatoriamente e de forma exata esta abertura incluindo a descrição oficial exata acima:
 "Com base no subitem {texto_processado} ({descricao_oficial}) da LC 116/2003 e nas correspondências oficiais da Nomenclatura Brasileira de Serviços (NBS), apresento abaixo o mapeamento fiscal para enquadramento da operação:"
 
 2. Em seguida, monte a tabela Markdown contendo exatamente quatro colunas: `Subitem LC 116 | Código NBS | Descrição Oficial da NBS | Área de Atuação com Exemplo Prático`.
-3. Preencha a 4ª coluna exclusivamente com os textos estruturados de "Exemplo Prático Obrigatório" fornecidos acima, destacando a Área de Atuação antes do caso prático.
 """
   else:
     contexto_extraido = f"""
@@ -386,6 +317,19 @@ DIRETRIZ DE REDAÇÃO OBRIGATÓRIA:
     )
 
     resposta_ia = resposta_modelo.choices[0].message.content
+
+    # Preencher a estrutura para o botão de download em Excel com base na resposta ou mapeamento
+    for item in dicionario_lc116.get(texto_processado, {}).get(
+        "nbs_oficiais", []
+    ):
+      dados_tabela_estruturados.append({
+          "Subitem LC 116": texto_processado,
+          "Código NBS": item["codigo"],
+          "Descrição Oficial da NBS": item["descricao"],
+          "Área de Atuação com Exemplo Prático": (
+              f"Gerado via enquadramento inteligente para {item['codigo']}"
+          ),
+      })
 
     # Guardar APENAS a resposta limpa da IA na sessão pública
     mensagem_ia = {
