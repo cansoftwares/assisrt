@@ -68,19 +68,20 @@ st.markdown(
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
     }
 
-    /* Estilização para agrupar os botões de Ações Rápidas de forma compacta e fluida */
+    /* Container flexível para os botões de ações rápidas ficarem próximos e quebrarem linha responsivamente */
     .acoes-rapidas-container {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 6px;
         align-items: center;
         margin-top: 6px;
         margin-bottom: 10px;
     }
-    
-    .acoes-rapidas-container [data-testid="stHorizontalBlock"] {
-        gap: 8px !important;
-        flex-wrap: wrap !important;
+
+    /* Faz com que cada elemento de botão individual dentro da área se ajuste organicamente ao texto */
+    .acoes-rapidas-container > div {
+        width: auto !important;
+        flex: 0 0 auto !important;
     }
 
     table {
@@ -279,7 +280,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                 "*Importante: Escolha com precisão o NBS, a correta classificação garante a aplicação adequada das regras, mitigando riscos de bitributação ou autuações fiscais.*"
             )
 
-            # 3. Botões de Ações Rápidas compactos lado a lado com quebra responsiva automática
+            # 3. Botões de Ações Rápidas compactos dispostos de forma fluida sem colunas rígidas
             if tabela_para_baixar:
                 st.markdown(
                     "<small><b>Ações rápidas:</b> <i>(Clique para aprofundar no código)</i></small>",
@@ -287,24 +288,18 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                 )
                 
                 st.markdown('<div class="acoes-rapidas-container">', unsafe_allow_html=True)
-                # Criamos colunas dinâmicas compactas, distribuindo os botões em linha horizontal
-                num_botoes = len(tabela_para_baixar)
-                cols = st.columns(num_botoes if num_botoes > 0 else 1)
-                
                 for i, row_data in enumerate(tabela_para_baixar):
                     cod_nbs_atual = row_data.get("Código NBS", "")
-                    col_idx = i % len(cols)
-                    with cols[col_idx]:
-                        if st.button(
-                            f"🔍 {cod_nbs_atual}",
-                            key=f"btn_nbs_{idx}_{i}_{cod_nbs_atual}",
-                        ):
-                            st.session_state["pending_nbs_prompt"] = (
-                                f"Por favor, traga mais detalhes estratégicos, regras de"
-                                f" tributação e enquadramento avançado para o código NBS"
-                                f" {cod_nbs_atual}."
-                            )
-                            st.rerun()
+                    if st.button(
+                        f"🔍 {cod_nbs_atual}",
+                        key=f"btn_nbs_{idx}_{i}_{cod_nbs_atual}",
+                    ):
+                        st.session_state["pending_nbs_prompt"] = (
+                            f"Por favor, traga mais detalhes estratégicos, regras de"
+                            f" tributação e enquadramento avançado para o código NBS"
+                            f" {cod_nbs_atual}."
+                        )
+                        st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
 
             # 4. Rodapé de valorização do profissional contábil
