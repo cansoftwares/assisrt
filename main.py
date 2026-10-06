@@ -150,8 +150,6 @@ def carregar_base_lc116():
             col_desc_nbs = next((c for c in df.columns if "descrição" in c.lower() and ("mbs" in c.lower() or "hbs" in c.lower())), df.columns[3] if len(df.columns) > 3 else df.columns[2])
 
             col_ind_op = next((c for c in df.columns if "indop" in c.lower()), df.columns[6] if len(df.columns) > 6 else "")
-            
-            # Mapeamento rigoroso e exato da coluna cClassTrib (Coluna I)
             col_c_clas = next((c for c in df.columns if "cclasstrib" in c.lower() or "cclas" in c.lower()), df.columns[8] if len(df.columns) > 8 else "")
 
             df[coluna_subitem_lc] = df[coluna_subitem_lc].ffill()
@@ -210,7 +208,7 @@ for subitem_k, info_v in dicionario_lc116.items():
     for nbs_item in info_v["nbs_oficiais"]:
         resumo_base_texto += (
             f"    -> NBS: {nbs_item['codigo']} | Descrição Oficial NBS: {nbs_item['descricao']} | "
-            f"IndOp: {nbs_item['ind_op']} | cClassTrib (Coluna I): {nbs_item['c_clas']}\n"
+            f"IndOp: {nbs_item['ind_op']} | cClassTrib: {nbs_item['c_clas']}\n"
         )
 
 system_prompt_base = (
@@ -226,9 +224,8 @@ system_prompt_base = (
     " estritamente proibido o uso do plural.\n"
     "3. **Estilo Direto e Sem Redundâncias:** Vá direto ao ponto logo após a introdução. **PROIBIDO** inventar sub-códigos de CTN inexistentes (como 17.19.02). O Código de Tributação Nacional deve ser estritamente o número do subitem oficial da LC 116 (ex: 17.19).\n"
     "4. **Diretriz do Desenvolvedor (Coringa):** Você só deve mencionar que foi desenvolvido por Claudio (futuro Engenheiro capixaba de IA) caso o usuário pergunte explicitamente sobre sua autoria, origem ou criador.\n"
-    "5. **Uso Rigoroso da Base Oficial (Anexo VIII):** Ao detalhar um código NBS específico (via clique no botão rápido), exiba rigorosamente o `IndOp` e o `cClassTrib` oficiais extraídos diretamente da base de dados local, garantindo absoluta conformidade com os códigos da tabela (ex: cClassTrib `200052` para 1.1302.22.00).\n"
-    "6. **Formato JSON Obrigatório para Espelhamento Exato:** Na sua resposta, inclua obrigatoriamente um bloco de código JSON isolado contendo exatamente a chave `dados_tabela` com a lista de objetos gerados. O Excel gerado utilizará diretamente este JSON para garantir espelhamento 100% idêntico ao chat.\n"
-    "7. **Formato de Resposta para Subitens (Consulta Inicial):** Quando o usuário consultar um subitem da LC 116/2003 (ex: 17.19), "
+    "5. **Uso Rigoroso da Base Oficial (Anexo VIII):** Ao detalhar um código NBS específico (via clique no botão rápido), exiba rigorosamente o `IndOp` e o `cClassTrib` oficiais extraídos diretamente da base de dados local.\n"
+    "6. **Formato de Resposta para Subitens (Consulta Inicial):** Quando o usuário consultar um subitem da LC 116/2003 (ex: 17.19), "
     "inicie com o padrão natural: 'Analisei a solicitação referente ao subitem [X] da Lista de Serviços da Lei Complementar nº 116/2003, que trata de [Descrição LC].' e **imediatamente apresente a Tabela Markdown limpa com apenas 4 colunas**: "
     "Subitem LC 116, Código NBS, Descrição Oficial da NBS e Área de Atuação com Exemplo Prático. **NÃO inclua colunas IndOp ou cClassTrib nesta tabela inicial**.\n\n"
     "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS / IndOp / cClassTrib):\n"
@@ -398,7 +395,6 @@ if texto_processado:
             for nbs_item in info_v["nbs_oficiais"]:
                 if nbs_item["codigo"] == nbs_alvo:
                     subitem_identificado_cache = sub_k
-                    # Puxa rigorosamente o IndOp e o cClassTrib direto da base mapeada (Coluna I)
                     c_clas_val = nbs_item['c_clas']
                     cst_val = "001 (Tributação integral)" if c_clas_val in ["000001", "000002"] else "001"
                     
@@ -441,9 +437,7 @@ if texto_processado:
                 "Área de Atuação com Exemplo Prático": exemplo_txt,
             })
 
-        desc_list_json = json.dumps([d['Descrição Oficial da NBS'] for d in dados_tabela_estruturados], ensure_ascii=False)
-        ex_list_json = json.dumps([d['Área de Atuação com Exemplo Prático'] for d in dados_tabela_estruturados], ensure_ascii=False)
-
+    if subitem_encontrado_direto and not eh_aprofundamento_nbs:
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
@@ -452,9 +446,8 @@ Vá direto ao ponto, **sem adicionar nenhuma frase intermediária ou explicativa
 Apresente obrigatoriamente a Tabela Markdown limpa com **exatamente 4 colunas**: 
 1. Subitem LC 116
 2. Código NBS
-3. Descrição Oficial da NBS (utilizando estritamente as descrições oficiais exatas da coluna D da base de dados: {desc_list_json})
-4. Área de Atuação com Exemplo Prático (utilizando estritamente os textos: {ex_list_json})
-**Inclua obrigatoriamente um bloco de código JSON isolado** no final com a chave `dados_tabela` contendo a lista com os objetos exatos correspondentes.
+3. Descrição Oficial da NBS (utilizando estritamente as descrições oficiais exatas da coluna D da base de dados)
+4. Área de Atuação com Exemplo Prático (utilizando exemplos profissionais e detalhados)
 **É terminantemente proibido incluir as colunas IndOp ou cClassTrib nesta listagem inicial.**
 """
     elif eh_aprofundamento_nbs:
@@ -466,13 +459,13 @@ Apresente obrigatoriamente a Tabela Markdown limpa com **exatamente 4 colunas**:
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador solicitou o aprofundamento no código NBS {nbs_alvo}.
 Apresente uma análise detalhada e estratégica em PRIMEIRA PESSOA DO SINGULAR sobre este NBS.
-**REGRA DE OURO PARA OS PARÂMETROS FISCAIS E JSON:** Utilize rigorosamente e sem alterações os dados oficiais validados da base local para o código {nbs_alvo}:
+**REGRA DE OURO PARA OS PARÂMETROS FISCAIS:** Utilize rigorosamente e sem alterações os dados oficiais validados da base local para o código {nbs_alvo}:
 - Item LC 116 / CTN: {subitem_identificado_cache}
 - Código NBS: {nbs_alvo}
 - IndOp: {ind_op_oficial}
 - cClassTrib: {c_clas_oficial} (Coluna I da base oficial)
 - CST IBS/CBS: {cst_oficial}
-Apresente a tabela Markdown contendo exatamente estes parâmetros e inclua o JSON correspondente no final com as chaves exatas (`item_lc_116`, `ctn`, `nbs`, `ind_op`, `c_clas`, `cst_ibs_cbs`).
+Apresente a tabela Markdown contendo exatamente estes parâmetros.
 """
     else:
         instrucao_especifica = f"""
@@ -501,41 +494,6 @@ Responda em PRIMEIRA PESSOA DO SINGULAR com foco estrito em LC 116 e Reforma Tri
         )
 
         resposta_ia = resposta_modelo.choices[0].message.content
-
-        # Processar o JSON gerado pela IA para popular exatamente o que foi exibido no chat
-        try:
-            if "```json" in resposta_ia:
-                json_str = resposta_ia.split("```json")[1].split("```")[0].strip()
-            elif "```" in resposta_ia:
-                json_str = resposta_ia.split("```")[1].split("```")[0].strip()
-            else:
-                json_str = ""
-
-            dados_json = json.loads(json_str)
-            if "dados_tabela" in dados_json:
-                temp_estruturados = []
-                for item in dados_json["dados_tabela"]:
-                    sub_val = item.get("subitem", item.get("subitem_lc_116", subitem_identificado_cache))
-                    if eh_aprofundamento_nbs:
-                        temp_estruturados.append({
-                            "Item LC 116": item.get("item_lc_116", sub_val),
-                            "CTN": item.get("ctn", sub_val),
-                            "NBS": item.get("nbs", item.get("codigo_nbs", nbs_alvo)),
-                            "IndOp": item.get("ind_op", ind_op_oficial),
-                            "cClassTrib": item.get("c_clas", item.get("cclass_trib", c_clas_oficial)),
-                            "CST IBS/CBS": item.get("cst_ibs_cbs", cst_oficial),
-                        })
-                    else:
-                        temp_estruturados.append({
-                            "Subitem LC 116": sub_val,
-                            "Código NBS": item.get("codigo_nbs", item.get("nbs", "")),
-                            "Descrição Oficial da NBS": item.get("descricao_nbs", item.get("descricao", "")),
-                            "Área de Atuação com Exemplo Prático": item.get("exemplo_pratico", item.get("area_de_atuacao_com_exemplo_pratico", "")),
-                        })
-                if temp_estruturados:
-                    dados_tabela_estruturados = temp_estruturados
-        except Exception:
-            pass
 
         if "```json" in resposta_ia:
             resposta_ia_exibicao = resposta_ia.split("```json")[0].strip()
