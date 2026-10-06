@@ -12,7 +12,7 @@ st.set_page_config(
     page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️"
 )
 
-# Estilo CSS otimizado para o layout corporativo
+# Estilo CSS otimizado para o layout corporativo e botões compactos lado a lado
 st.markdown(
     """
 <style>
@@ -66,6 +66,21 @@ st.markdown(
         margin-left: 0px !important;
         margin-right: auto !important;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
+
+    /* Estilização para agrupar os botões de Ações Rápidas de forma compacta e fluida */
+    .acoes-rapidas-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin-top: 6px;
+        margin-bottom: 10px;
+    }
+    
+    .acoes-rapidas-container [data-testid="stHorizontalBlock"] {
+        gap: 8px !important;
+        flex-wrap: wrap !important;
     }
 
     table {
@@ -253,7 +268,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                         ),
                     })
 
-            # Nome do assistente posicionado exatamente ao lado do avatar do robô
+            # Nome do assistente ao lado do avatar do robô
             st.markdown("**Tribô – Seu assistente na Reforma Tributária**")
 
             # 1. Texto principal da resposta da IA
@@ -264,17 +279,18 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                 "*Importante: Escolha com precisão o NBS, a correta classificação garante a aplicação adequada das regras, mitigando riscos de bitributação ou autuações fiscais.*"
             )
 
-            # 3. Botões de Ações Rápidas limpos logo após o aviso
+            # 3. Botões de Ações Rápidas compactos lado a lado com quebra responsiva automática
             if tabela_para_baixar:
                 st.markdown(
                     "<small><b>Ações rápidas:</b> <i>(Clique para aprofundar no código)</i></small>",
                     unsafe_allow_html=True,
                 )
-                cols = st.columns(
-                    min(len(tabela_para_baixar), 4)
-                    if len(tabela_para_baixar) > 0
-                    else 1
-                )
+                
+                st.markdown('<div class="acoes-rapidas-container">', unsafe_allow_html=True)
+                # Criamos colunas dinâmicas compactas, distribuindo os botões em linha horizontal
+                num_botoes = len(tabela_para_baixar)
+                cols = st.columns(num_botoes if num_botoes > 0 else 1)
+                
                 for i, row_data in enumerate(tabela_para_baixar):
                     cod_nbs_atual = row_data.get("Código NBS", "")
                     col_idx = i % len(cols)
@@ -289,6 +305,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                                 f" {cod_nbs_atual}."
                             )
                             st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
             # 4. Rodapé de valorização do profissional contábil
             st.markdown(
