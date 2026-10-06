@@ -1,5 +1,4 @@
 import io
-import json
 import os
 import re
 import pandas as pd
@@ -144,30 +143,32 @@ def carregar_base_lc116():
             df = pd.read_excel(caminho_excel, sheet_name="tabela geral", dtype=str)
             df.columns = [str(col).strip() for col in df.columns]
 
-            # Identificação rigorosa das colunas pelo nome exato do cabeçalho da planilha oficial
-            col_item_lc = next((c for c in df.columns if "descrição item" in c.lower() or "item" in c.lower()), df.columns[0])
+            # Mapeamento robusto das colunas oficiais do Anexo VIII
+            coluna_subitem_lc = df.columns[0]
             col_nbs = next((c for c in df.columns if "mbs" in c.lower() or "nbs" in c.lower()), df.columns[2])
-            col_desc_nbs = next((c for c in df.columns if "descrição mbs" in c.lower() or "descrição hbs" in c.lower() or "descrição" in c.lower() and c != col_item_lc), df.columns[3])
+            
+            # Identifica com precisão a coluna de descrição da NBS (geralmente DESCRICAO HBS / coluna D)
+            col_desc_nbs = next((c for c in df.columns if "descrição" in c.lower() and c != df.columns[0] and c != col_nbs), df.columns[3] if len(df.columns) > 3 else df.columns[2])
             
             col_ind_op = next((c for c in df.columns if "indop" in c.lower()), df.columns[6] if len(df.columns) > 6 else "")
             col_c_clas = next((c for c in df.columns if "cclasstrib" in c.lower()), df.columns[8] if len(df.columns) > 8 else "")
 
-            # Mapeamento do subitem LC 116 baseado nas colunas iniciais (geralmente coluna A ou B)
-            coluna_subitem_lc = df.columns[0]
+            # Propaga valores mesclados/vazios para manter a consistência da tabela
             df[coluna_subitem_lc] = df[coluna_subitem_lc].ffill()
             df[col_nbs] = df[col_nbs].ffill()
+            if col_desc_nbs in df.columns:
+                df[col_desc_nbs] = df[col_desc_nbs].ffill()
 
             base_mapeada = {}
             for _, row in df.iterrows():
                 subitem_bruto = str(row[coluna_subitem_lc]).strip()
-                # Extrai apenas o número do subitem (ex: extrai 17.19 de textos longos)
                 match_sub = re.search(r"\b(\d{2}\.\d{2})\b", subitem_bruto)
                 subitem = match_sub.group(1) if match_sub else subitem_bruto
 
                 cod_nbs = str(row[col_nbs]).strip()
-                desc_nbs = str(row[col_desc_nbs]).strip() if col_desc_nbs in df.columns else ""
-                ind_op = str(row[col_ind_op]).strip() if col_ind_op and col_ind_op in df.columns else "100301"
-                c_clas = str(row[col_c_clas]).strip() if col_c_clas and col_c_clas in df.columns else "000001"
+                desc_nbs = str(row[col_desc_nbs]).strip() if col_desc_nbs in df.columns and pd.notna(row[col_desc_nbs]) else ""
+                ind_op = str(row[col_ind_op]).strip() if col_ind_op and col_ind_op in df.columns and pd.notna(row[col_ind_op]) else "100301"
+                c_clas = str(row[col_c_clas]).strip() if col_c_clas and col_c_clas in df.columns and pd.notna(row[col_c_clas]) else "000001"
 
                 if subitem and subitem != "nan":
                     if subitem not in base_mapeada:
@@ -177,12 +178,11 @@ def carregar_base_lc116():
                         }
 
                     if cod_nbs and cod_nbs != "nan" and cod_nbs.startswith("1."):
-                        # Evita duplicatas do mesmo NBS
                         if not any(item["codigo"] == cod_nbs for item in base_mapeada[subitem]["nbs_oficiais"]):
                             base_mapeada[subitem]["nbs_oficiais"].append(
                                 {
                                     "codigo": cod_nbs, 
-                                    "descricao": desc_nbs,
+                                    "descricao": desc_nbs if desc_nbs and desc_nbs != "nan" else "Serviço de Contabilidade e Escrituração",
                                     "ind_op": ind_op if ind_op != "nan" else "100301",
                                     "c_clas": c_clas if c_clas != "nan" else "000001"
                                 }
@@ -393,7 +393,7 @@ if texto_processado:
                     subitem_identificado_cache = sub_k
                     dados_tabela_estruturados.append({
                         "Item LC 116": sub_k,
-                        "CTN": sub_k,  # CTN corrigido para refletir exatamente o subitem oficial da LC 116
+                        "CTN": sub_k,  # CTN alinhado rigorosamente à LC 116 sem ramificações fantasma
                         "NBS": nbs_item["codigo"],
                         "IndOp": nbs_item["ind_op"],
                         "cClassTrib": nbs_item["c_clas"],
@@ -413,8 +413,8 @@ if texto_processado:
         
         exemplos_praticos_dinamicos = {
             "1.1302.21.00": "Escritório de Contabilidade: Elaboração de balanços patrimoniais e apuração de tributos para empresas do Lucro Real.",
-            "1.1302.22.00": "BPO Financeiro: Lançamento de notas fiscais de entrada e saída e conciliação bancária de clientes.",
-            "1.1302.23.00": "Departamento Pessoal Terceirizado: Cálculo de salários, emissão de holerites e encargos trabalhistas (FGTS/INSS)."
+            "1.1302.22.00": "Escrituração Mercantil: Lançamento de livros fiscais, escrituração contábil digital e conciliação de documentos.",
+            "1.1302.23.00": "Departamento Pessoal: Processamento de folha de pagamento, encargos sociais e obrigações trabalhistas."
         }
 
         for nbs_obj in info_sub["nbs_oficiais"]:
@@ -449,7 +449,7 @@ Vá direto ao ponto, **sem adicionar nenhuma frase intermediária ou explicativa
 O utilizador solicitou o aprofundamento no código NBS {nbs_alvo}.
 Apresente uma análise detalhada e estratégica em PRIMEIRA PESSOA DO SINGULAR sobre este NBS.
 **REGRA DE OURO PARA OS PARÂMETROS FISCAIS:** Utilize rigorosamente os dados oficiais validados da base para o código {nbs_alvo}:
-- Item LC 116 / CTN: {subitem_identificado_cache} (NÃO crie ramificações inexistentes como 17.19.02)
+- Item LC 116 / CTN: {subitem_identificado_cache} (Sem inventar sub-códigos como 17.19.02)
 - Código NBS: {nbs_alvo}
 - IndOp: {dados_tabela_estruturados[0]['IndOp'] if dados_tabela_estruturados else '100301'}
 - cClassTrib: {dados_tabela_estruturados[0]['cClassTrib'] if dados_tabela_estruturados else '000001'}
