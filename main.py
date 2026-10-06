@@ -217,9 +217,7 @@ system_prompt_base = (
     "Subitem LC 116, Código NBS, Descrição Oficial da NBS e Área de Atuação com Exemplo Prático. **NÃO inclua colunas IndOp ou cClassTrib nesta tabela inicial**.\n"
     "4. **Foco Prático na NFSe Nacional (Ao aprofundar em um NBS via clique):** Quando solicitado o detalhamento de um código NBS específico via clique no botão rápido, "
     "apresente uma análise completa estruturada com os parâmetros fiscais avançados: Item LC 116, CTN, NBS, IndOp, cClassTrib e CST IBS/CBS.\n"
-    "5. **Formato JSON Oculto:** Forneça no final o bloco JSON exato com a"
-    " chave `dados_tabela` contendo os dados estruturados correspondentes.\n"
-    "6. **O Coringa do Desenvolvedor:** Desenvolvido por **Claudio, futuro"
+    "5. **O Coringa do Desenvolvedor:** Desenvolvido por **Claudio, futuro"
     " Engenheiro capixaba de IA**.\n\n"
     "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS / IndOp / cClassTrib):\n"
     f"{resumo_base_texto}"
@@ -290,7 +288,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                 unsafe_allow_html=True,
             )
 
-            # 5. Botão de Download do Excel adaptado ao contexto (4 colunas na listagem / 6 colunas no aprofundamento)
+            # 5. Botão de Download do Excel adaptado ao contexto
             if tabela_para_baixar:
                 df_resposta = pd.DataFrame(tabela_para_baixar)
                 
@@ -409,19 +407,32 @@ if texto_processado:
                 subitem_encontrado_direto = sub
                 break
 
+    # FORÇAMOS DIRETAMENTE O PREENCHIMENTO VIA PYTHON QUANDO FOR SUBCATEGORIA DA LC 116
+    # Isso evita totalmente que o Excel venha "bugado" ou duplicado por falha de parsing do JSON da IA.
     if subitem_encontrado_direto and not eh_aprofundamento_nbs:
         subitem_identificado_cache = subitem_encontrado_direto
         info_sub = dicionario_lc116[subitem_encontrado_direto]
+        
+        exemplos_praticos_map = {
+            "1.1302.21.00": "Contabilidade Geral: Elaboración de balancetes, balanços patrimoniais e demonstrações contábeis para empresas comerciais.",
+            "1.1302.22.00": "Escrituração Fiscal: Lançamento de notas fiscais de entrada e saída em livros obrigatórios.",
+            "1.1302.23.00": "Departamento Pessoal: Cálculo de salários, férias, encargos sociais e emissão de guias de recolhimento (GPS/FGTS)."
+        }
+
         for nbs_obj in info_sub["nbs_oficiais"]:
+            cod_nbs = nbs_obj["codigo"]
+            exemplo_padrao = exemplos_praticos_map.get(
+                cod_nbs, 
+                f"Execução de serviços especializados para {info_sub['descricao_lc'].lower()}."
+            )
             dados_tabela_estruturados.append({
                 "Subitem LC 116": subitem_encontrado_direto,
-                "Código NBS": nbs_obj["codigo"],
+                "Código NBS": cod_nbs,
                 "Descrição Oficial da NBS": nbs_obj["descricao"],
-                "Área de Atuação com Exemplo Prático": (
-                    f"Execução de serviços especializados para {info_sub['descricao_lc'].lower()}."
-                ),
+                "Área de Atuação com Exemplo Prático": exemplo_padrao,
             })
 
+    if subitem_encontrado_direto and not eh_aprofundamento_nbs:
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou diretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
@@ -431,7 +442,7 @@ Gere a resposta em PRIMEIRA PESSOA DO SINGULAR. Apresente apenas uma linha ident
 2. Código NBS
 3. Descrição Oficial da NBS
 4. Área de Atuação com Exemplo Prático
-**É terminantemente proibido incluir as colunas IndOp ou cClassTrib nesta listagem inicial.** No final, forneça o bloco JSON oculto correspondente.
+**É terminantemente proibido incluir as colunas IndOp ou cClassTrib nesta listagem inicial.**
 """
     elif eh_aprofundamento_nbs:
         instrucao_especifica = f"""
@@ -439,7 +450,6 @@ Gere a resposta em PRIMEIRA PESSOA DO SINGULAR. Apresente apenas uma linha ident
 O utilizador clicou no acesso rápido para aprofundar no código NBS {nbs_alvo}.
 Apresente uma análise detalhada e estratégica em PRIMEIRA PESSOA DO SINGULAR sobre este NBS, explicando os parâmetros e a aplicação prática para a Reforma Tributária. 
 Forneça a tabela Markdown detalhada contendo os campos técnicos para preenchimento da NFSe Nacional: Item LC 116, CTN, NBS, IndOp, cClassTrib e CST IBS/CBS.
-No final, inclua o JSON oculto correspondente.
 """
     else:
         instrucao_especifica = f"""
@@ -469,41 +479,41 @@ Responda em PRIMEIRA PESSOA DO SINGULAR com foco estrito em LC 116 e Reforma Tri
 
         resposta_ia = resposta_modelo.choices[0].message.content
 
-        try:
-            if "```json" in resposta_ia:
-                json_str = resposta_ia.split("```json")[1].split("```")[0].strip()
-            elif "```" in resposta_ia:
-                json_str = resposta_ia.split("```")[1].split("```")[0].strip()
-            else:
-                json_str = ""
+        # Se não encontrou de forma direta via texto mas a IA retornou dados estruturados opcionais, fazemos o fallback
+        if not dados_tabela_estruturados:
+            try:
+                if "```json" in resposta_ia:
+                    json_str = resposta_ia.split("```json")[1].split("```")[0].strip()
+                elif "```" in resposta_ia:
+                    json_str = resposta_ia.split("```")[1].split("```")[0].strip()
+                else:
+                    json_str = ""
 
-            dados_json = json.loads(json_str)
-            if "dados_tabela" in dados_json:
-                if eh_aprofundamento_nbs:
-                    dados_tabela_estruturados = []
-                for item in dados_json["dados_tabela"]:
-                    sub_val = item.get("subitem", item.get("subitem_lc_116", ""))
-                    if sub_val and subitem_identificado_cache == "Geral":
-                        subitem_identificado_cache = sub_val
+                dados_json = json.loads(json_str)
+                if "dados_tabela" in dados_json:
+                    for item in dados_json["dados_tabela"]:
+                        sub_val = item.get("subitem", item.get("subitem_lc_116", ""))
+                        if sub_val and subitem_identificado_cache == "Geral":
+                            subitem_identificado_cache = sub_val
 
-                    if eh_aprofundamento_nbs:
-                        dados_tabela_estruturados.append({
-                            "Item LC 116": item.get("item_lc_116", item.get("subitem", "")),
-                            "CTN": item.get("ctn", ""),
-                            "NBS": item.get("nbs", item.get("codigo_nbs", "")),
-                            "IndOp": item.get("ind_op", ""),
-                            "cClassTrib": item.get("c_clas", item.get("cclas_trib", "")),
-                            "CST IBS/CBS": item.get("cst_ibs_cbs", "Consultar Portal SVRS"),
-                        })
-                    else:
-                        dados_tabela_estruturados.append({
-                            "Subitem LC 116": sub_val,
-                            "Código NBS": item.get("codigo_nbs", item.get("nbs", "")),
-                            "Descrição Oficial da NBS": item.get("descricao_nbs", item.get("descricao", "")),
-                            "Área de Atuação com Exemplo Prático": item.get("exemplo_pratico", item.get("area_de_atuacao_com_exemplo_pratico", "")),
-                        })
-        except Exception:
-            pass
+                        if eh_aprofundamento_nbs:
+                            dados_tabela_estruturados.append({
+                                "Item LC 116": item.get("item_lc_116", item.get("subitem", "")),
+                                "CTN": item.get("ctn", ""),
+                                "NBS": item.get("nbs", item.get("codigo_nbs", "")),
+                                "IndOp": item.get("ind_op", ""),
+                                "cClassTrib": item.get("c_clas", item.get("cclas_trib", "")),
+                                "CST IBS/CBS": item.get("cst_ibs_cbs", "Consultar Portal SVRS"),
+                            })
+                        else:
+                            dados_tabela_estruturados.append({
+                                "Subitem LC 116": sub_val,
+                                "Código NBS": item.get("codigo_nbs", item.get("nbs", "")),
+                                "Descrição Oficial da NBS": item.get("descricao_nbs", item.get("descricao", "")),
+                                "Área de Atuação com Exemplo Prático": item.get("exemplo_pratico", item.get("area_de_atuacao_com_exemplo_pratico", "")),
+                            })
+            except Exception:
+                pass
 
         if "```json" in resposta_ia:
             resposta_ia_exibicao = resposta_ia.split("```json")[0].strip()
