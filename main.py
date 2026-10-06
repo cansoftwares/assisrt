@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import re
 import pandas as pd
@@ -223,7 +224,7 @@ system_prompt_base = (
     "4. **Diretriz do Desenvolvedor (Coringa):** Você só deve mencionar que foi desenvolvido por Claudio (futuro Engenheiro capixaba de IA) caso o usuário pergunte explicitamente sobre sua autoria, origem ou criador.\n"
     "5. **Uso Rigoroso da Descrição Oficial da NBS (Coluna D):** Ao gerar a tabela de equivalência para um subitem da LC 116, adote obrigatoriamente a descrição oficial exata extraída da coluna D da base de dados correspondente a cada código NBS.\n"
     "6. **Formato JSON Obrigatório para Espelhamento Exato:** Na sua resposta, inclua obrigatoriamente um bloco de código JSON isolado contendo exatamente a chave `dados_tabela` com a lista de objetos gerados (contendo chaves rigorosas: `subitem`, `codigo_nbs`, `descricao_nbs` e `exemplo_pratico`). O Excel gerado utilizará diretamente este JSON para garantir espelhamento 100% idêntico ao chat.\n"
-    "7. **Formato de Resposta para Subitens (Consulta Inicial):** Quando o usuário consultar um subitem da LC 116/2003 (ex: 17.19), "
+    "7. **Formato de Resposta para Subitens (Consulta Inicial):** Когда o usuário consultar um subitem da LC 116/2003 (ex: 17.19), "
     "inicie com o padrão natural: 'Analisei a solicitação referente ao subitem [X] da Lista de Serviços da Lei Complementar nº 116/2003, que trata de [Descrição LC].' e **imediatamente apresente a Tabela Markdown limpa com apenas 4 colunas**: "
     "Subitem LC 116, Código NBS, Descrição Oficial da NBS e Área de Atuação com Exemplo Prático. **NÃO inclua colunas IndOp ou cClassTrib nesta tabela inicial**.\n"
     "8. **Foco Prático na NFSe Nacional (Ao aprofundar em um NBS via clique):** Quando solicitado o detalhamento de um código NBS específico via clique no botão rápido, "
@@ -415,7 +416,6 @@ if texto_processado:
         subitem_identificado_cache = subitem_encontrado_direto
         info_sub = dicionario_lc116[subitem_encontrado_direto]
 
-        # Constrói preventivamente os dados estruturados a partir da base oficial para garantir robustez
         for nbs_obj in info_sub["nbs_oficiais"]:
             cod_nbs = nbs_obj["codigo"]
             desc_nbs_oficial = nbs_obj["descricao"]
@@ -435,6 +435,9 @@ if texto_processado:
                 "Área de Atuação com Exemplo Prático": exemplo_txt,
             })
 
+        desc_list_json = json.dumps([d['Descrição Oficial da NBS'] for d in dados_tabela_estruturados], ensure_ascii=False)
+        ex_list_json = json.dumps([d['Área de Atuação com Exemplo Prático'] for d in dados_tabela_estruturados], ensure_ascii=False)
+
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
@@ -443,8 +446,8 @@ Vá direto ao ponto, **sem adicionar nenhuma frase intermediária ou explicativa
 Apresente obrigatoriamente a Tabela Markdown limpa com **exatamente 4 colunas**: 
 1. Subitem LC 116
 2. Código NBS
-3. Descrição Oficial da NBS (utilizando estritamente as descrições oficiais exatas da coluna D da base de dados: {json.dumps([d['Descrição Oficial da NBS'] for d in dados_tabela_estruturados], ensure_ascii=False)})
-4. Área de Atuação com Exemplo Prático (utilizando estritamente os textos: {json.dumps([d['Área de Atuação com Exemplo Prático'] for d in dados_tabela_estruturados], ensure_ascii=False)})
+3. Descrição Oficial da NBS (utilizando estritamente as descrições oficiais exatas da coluna D da base de dados: {desc_list_json})
+4. Área de Atuação com Exemplo Prático (utilizando estritamente os textos: {ex_list_json})
 **Inclua obrigatoriamente um bloco de código JSON isolado** no final com a chave `dados_tabela` contendo a lista com os objetos exatos correspondentes (chaves: `subitem`, `codigo_nbs`, `descricao_nbs`, `exemplo_pratico`).
 **É terminantemente proibido incluir as colunas IndOp ou cClassTrib nesta listagem inicial.**
 """
