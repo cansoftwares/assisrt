@@ -211,11 +211,10 @@ system_prompt_base = (
     "2. **Tom em Primeira Pessoa do Singular:** Responda SEMPRE em **primeira"
     " pessoa do singular** (ex: 'analisei', 'identifiquei', 'apresento', 'consultei'). É"
     " estritamente proibido o uso do plural.\n"
-    "3. **Estilo Analítico e Natural:** Seja fluido e inteligente nas introduções, evitando respostas robóticas ou excessivamente padronizadas.\n"
+    "3. **Estilo Direto e Sem Redundâncias:** Vá direto ao ponto logo após a introdução. **PROIBIDO** incluir frases genéricas ou redundantes como 'No contexto da Reforma Tributária e da adaptação à NFSe Nacional, identifiquei as classificações fiscais...'. \n"
     "4. **Diretriz do Desenvolvedor (Coringa):** Você só deve mencionar que foi desenvolvido por Claudio (futuro Engenheiro capixaba de IA) caso o usuário pergunte explicitamente sobre sua autoria, origem ou criador. Não inclua essa informação espontaneamente.\n"
     "5. **Formato de Resposta para Subitens (Consulta Inicial):** Quando o usuário consultar um subitem da LC 116/2003 (ex: 17.19), "
-    "apresente uma análise contextualizada e fluida indicando o subitem consultado, e "
-    "**obrigatoriamente inclua uma Tabela Markdown limpa com apenas 4 colunas**: "
+    "inicie com o padrão natural: 'Analisei a solicitação referente ao subitem [X] da Lista de Serviços da Lei Complementar nº 116/2003, que trata de [Descrição LC].' e **imediatamente apresente a Tabela Markdown limpa com apenas 4 colunas**: "
     "Subitem LC 116, Código NBS, Descrição Oficial da NBS e Área de Atuação com Exemplo Prático. **NÃO inclua colunas IndOp ou cClassTrib nesta tabela inicial**.\n"
     "6. **Foco Prático na NFSe Nacional (Ao aprofundar em um NBS via clique):** Quando solicitado o detalhamento de um código NBS específico via clique no botão rápido, "
     "apresente uma análise completa estruturada com os parâmetros fiscais avançados: Item LC 116, CTN, NBS, IndOp, cClassTrib e CST IBS/CBS.\n\n"
@@ -411,15 +410,16 @@ if texto_processado:
         subitem_identificado_cache = subitem_encontrado_direto
         info_sub = dicionario_lc116[subitem_encontrado_direto]
         
-        exemplos_praticos_map = {
-            "1.1302.21.00": "Contabilidade Geral: Elaboração de balancetes, balanços patrimoniais e demonstrações contábeis para empresas comerciais.",
-            "1.1302.22.00": "Escrituração Fiscal: Lançamento de notas fiscais de entrada e saída em livros obrigatórios.",
-            "1.1302.23.00": "Departamento Pessoal: Cálculo de salários, férias, encargos sociais e emissão de guias de recolhimento (GPS/FGTS)."
+        # Mapeamento estrito alinhado com o chat para garantir equivalência exata com o Excel
+        exemplos_praticos_dinamicos = {
+            "1.1302.21.00": "Escritório de Contabilidade: Elaboração de balanços patrimoniais e apuração de tributos para empresas do Lucro Real.",
+            "1.1302.22.00": "BPO Financeiro: Lançamento de notas fiscais de entrada e saída e conciliação bancária de clientes.",
+            "1.1302.23.00": "Departamento Pessoal Terceirizado: Cálculo de salários, emissão de holerites e encargos trabalhistas (FGTS/INSS)."
         }
 
         for nbs_obj in info_sub["nbs_oficiais"]:
             cod_nbs = nbs_obj["codigo"]
-            exemplo_padrao = exemplos_praticos_map.get(
+            exemplo_texto = exemplos_praticos_dinamicos.get(
                 cod_nbs, 
                 f"Execução de serviços especializados para {info_sub['descricao_lc'].lower()}."
             )
@@ -427,19 +427,20 @@ if texto_processado:
                 "Subitem LC 116": subitem_encontrado_direto,
                 "Código NBS": cod_nbs,
                 "Descrição Oficial da NBS": nbs_obj["descricao"],
-                "Área de Atuação com Exemplo Prático": exemplo_padrao,
+                "Área de Atuação com Exemplo Prático": exemplo_texto,
             })
 
     if subitem_encontrado_direto and not eh_aprofundamento_nbs:
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
-Escreva a introdução em PRIMEIRA PESSOA DO SINGULAR (ex: "Analisei a LC 116 e identifiquei...", "Verifiquei a correspondência para..."), com tom natural e analítico.
+Inicie obrigatoriamente com a frase exata: "Analisei a solicitação referente ao subitem {subitem_encontrado_direto} da Lista de Serviços da Lei Complementar nº 116/2003, que trata de {info_sub['descricao_lc']}."
+Vá direto ao ponto, **sem adicionar nenhuma frase intermediária ou explicativa**.
 **ATENÇÃO AO FORMATO DA TABELA:** Apresente obrigatoriamente a Tabela Markdown limpa com **exatamente 4 colunas**: 
 1. Subitem LC 116
 2. Código NBS
 3. Descrição Oficial da NBS
-4. Área de Atuação com Exemplo Prático
+4. Área de Atuação com Exemplo Prático (utilizando exatamente estes textos: {json.dumps([d['Área de Atuação com Exemplo Prático'] for d in dados_tabela_estruturados], ensure_ascii=False)})
 **É terminantemente proibido incluir as colunas IndOp ou cClassTrib nesta listagem inicial.**
 """
     elif eh_aprofundamento_nbs:
@@ -476,41 +477,6 @@ Responda em PRIMEIRA PESSOA DO SINGULAR com foco estrito em LC 116 e Reforma Tri
         )
 
         resposta_ia = resposta_modelo.choices[0].message.content
-
-        if not dados_tabela_estruturados:
-            try:
-                if "```json" in resposta_ia:
-                    json_str = resposta_ia.split("```json")[1].split("```")[0].strip()
-                elif "```" in resposta_ia:
-                    json_str = resposta_ia.split("```")[1].split("```")[0].strip()
-                else:
-                    json_str = ""
-
-                dados_json = json.loads(json_str)
-                if "dados_tabela" in dados_json:
-                    for item in dados_json["dados_tabela"]:
-                        sub_val = item.get("subitem", item.get("subitem_lc_116", ""))
-                        if sub_val and subitem_identificado_cache == "Geral":
-                            subitem_identificado_cache = sub_val
-
-                        if eh_aprofundamento_nbs:
-                            dados_tabela_estruturados.append({
-                                "Item LC 116": item.get("item_lc_116", item.get("subitem", "")),
-                                "CTN": item.get("ctn", ""),
-                                "NBS": item.get("nbs", item.get("codigo_nbs", "")),
-                                "IndOp": item.get("ind_op", ""),
-                                "cClassTrib": item.get("c_clas", item.get("cclas_trib", "")),
-                                "CST IBS/CBS": item.get("cst_ibs_cbs", "Consultar Portal SVRS"),
-                            })
-                        else:
-                            dados_tabela_estruturados.append({
-                                "Subitem LC 116": sub_val,
-                                "Código NBS": item.get("codigo_nbs", item.get("nbs", "")),
-                                "Descrição Oficial da NBS": item.get("descricao_nbs", item.get("descricao", "")),
-                                "Área de Atuação com Exemplo Prático": item.get("exemplo_pratico", item.get("area_de_atuacao_com_exemplo_pratico", "")),
-                            })
-            except Exception:
-                pass
 
         if "```json" in resposta_ia:
             resposta_ia_exibicao = resposta_ia.split("```json")[0].strip()
