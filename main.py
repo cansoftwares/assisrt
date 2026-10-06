@@ -159,7 +159,7 @@ def carregar_base_lc116():
 
             base_mapeada = {}
             for _, row in df.iterrows():
-                subitem_ bruto = str(row[coluna_subitem_lc]).strip()
+                subitem_bruto = str(row[coluna_subitem_lc]).strip()
                 # Extrai apenas o número do subitem (ex: extrai 17.19 de textos longos)
                 match_sub = re.search(r"\b(\d{2}\.\d{2})\b", subitem_bruto)
                 subitem = match_sub.group(1) if match_sub else subitem_bruto
