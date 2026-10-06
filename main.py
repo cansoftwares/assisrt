@@ -166,7 +166,6 @@ def carregar_base_lc116():
             base_mapeada = {}
             for _, row in df.iterrows():
                 subitem_bruto = str(row[coluna_subitem_lc]).strip()
-                # Extrai o subitem limpo (ex: 14.02, 17.19)
                 match_sub = re.search(r"\b(\d{2}\.\d{2})\b", subitem_bruto)
                 subitem = match_sub.group(1) if match_sub else subitem_bruto
 
@@ -214,7 +213,7 @@ for subitem_k, info_v in dicionario_lc116.items():
         ind_ops_str = ", ".join(nbs_v["ind_ops"])
         resumo_base_texto += (
             f"    -> NBS: {nbs_k} | Descrição Oficial NBS: {nbs_v['descricao']} | "
-            f"IndOp(s): {ind_ops_str} | cClassTrib: {nbs_v['c_clas']}\n"
+            f"IndOp(s): {ind_ops_str} ({nbs_v['local_desc']}) | cClassTrib: {nbs_v['c_clas']}\n"
         )
 
 system_prompt_base = (
@@ -395,7 +394,6 @@ if texto_processado:
         eh_aprofundamento_nbs = True
         nbs_alvo = match_nbs_clicado.group(1)
         
-        # Identificação rigorosa do subitem correto varrendo exclusivamente o NBS alvo na base
         for sub_k, info_v in dicionario_lc116.items():
             if nbs_alvo in info_v["nbs_oficiais"]:
                 subitem_identificado_cache = sub_k
@@ -403,7 +401,6 @@ if texto_processado:
                 c_clas_val = nbs_obj["c_clas"]
                 ind_ops_str = ", ".join(nbs_obj["ind_ops"])
                 
-                # Exemplos direcionados para serviços de manutenção/reparos/joias ou genéricos inteligentes
                 if "reparação" in nbs_obj["descricao"].lower() or "manutenção" in nbs_obj["descricao"].lower():
                     exemplo_multiplo = (
                         "1. Assistência Técnica Especializada: Restauração de mecanismos de relógios de alta precisão e joias finas para clientes particulares.\n"
@@ -496,17 +493,17 @@ Inicie com uma abordagem simpática e acolhedora em primeira pessoa, por exemplo
   - CTN: (deixar em branco)
   - Código NBS: {nbs_alvo}
   - IndOp: {ind_op_oficial}
-  - cClassTrib: {c_clas_oficial}
+  - cClassTrib: {c_clas_val}
   - CST IBS/CBS: (deixar em branco)
   - Exemplo Prático: {json.dumps(exemplo_val, ensure_ascii=False)}
 
-- Abaixo da tabela, inclua obrigatoriamente a **LEGENDA** formatada exatamente nos moldes solicitados (sem repetir o código numérico no subitem LC, apenas a descrição limpa, e mantendo CTN e CST em branco):
+- Abaixo da tabela, inclua obrigatoriamente a **LEGENDA** traduzindo o significado explicativo dos códigos selecionados:
   **LEGENDA:**
   - **Subitem LC:** {desc_lc_val}
   - **CTN:** 
   - **NBS:** {desc_nbs_oficial_val}
-  - **IndOp:** {local_desc_val}
-  - **cClassTrib:** Prestação de serviços de profissões intelectuais e técnicas.
+  - **IndOp:** ({ind_op_oficial}) {local_desc_val}
+  - **cClassTrib:** ({c_clas_val}) Prestação de serviços de profissões intelectuais, técnicas e reparação.
   - **CST IBS/CBS:** 
 
 **OBRIGATÓRIO - BLOCO JSON DE ESPELHAMENTO PARA O EXCEL:**
