@@ -211,17 +211,14 @@ system_prompt_base = (
     "2. **Tom em Primeira Pessoa do Singular:** Responda SEMPRE em **primeira"
     " pessoa do singular** (ex: 'identifiquei', 'apresento', 'consultei'). É"
     " proibido o uso do plural.\n"
-    "3. **Foco Prático na NFSe Nacional (Ao aprofundar em um NBS):** Quando solicitado detalhamento de um código NBS específico via clique rápido, "
-    "apresente uma análise completa e estruturada contendo os parâmetros oficiais para o preenchimento da NFSe Nacional:\n"
-    "   - **Item LC 116**\n"
-    "   - **CTN (Código de Tributação Nacional)** (conforme LC 116/2003)\n"
-    "   - **NBS**\n"
-    "   - **IndOp** (Indicador de Operação)\n"
-    "   - **cClassTrib** (Código de Classificação Tributária)\n"
-    "   - **CST IBS/CBS** (conforme Portal do SP - SVRS)\n"
-    "4. **Formato JSON Oculto:** Forneça no final o bloco JSON exato com a"
-    " chave `dados_tabela` contendo a tabela específica correspondente ao pedido.\n"
-    "5. **O Coringa do Desenvolvedor:** Desenvolvido por **Claudio, futuro"
+    "3. **Formato de Resposta para Subitens:** Quando o usuário consultar um subitem da LC 116/2003 (ex: 17.19), "
+    "apresente a análise inicial em texto e **obrigatoriamente inclua uma Tabela Markdown** contendo todas as correspondências "
+    "oficiais (Subitem, Código NBS, Descrição Oficial da NBS, IndOp e cClassTrib).\n"
+    "4. **Foco Prático na NFSe Nacional (Ao aprofundar em um NBS via clique):** Quando solicitado o detalhamento de um código NBS específico via clique no botão rápido, "
+    "apresente uma análise completa estruturada com os parâmetros oficiais para preenchimento: Item LC 116, CTN, NBS, IndOp, cClassTrib e CST IBS/CBS.\n"
+    "5. **Formato JSON Oculto:** Forneça no final o bloco JSON exato com a"
+    " chave `dados_tabela` contendo os dados estruturados correspondentes.\n"
+    "6. **O Coringa do Desenvolvedor:** Desenvolvido por **Claudio, futuro"
     " Engenheiro capixaba de IA**.\n\n"
     "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS / IndOp / cClassTrib):\n"
     f"{resumo_base_texto}"
@@ -252,7 +249,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
             # Nome do assistente ao lado do avatar do robô
             st.markdown("**Tribô – Seu assistente na Reforma Tributária**")
 
-            # 1. Texto principal da resposta da IA
+            # 1. Texto principal da resposta da IA (incluindo a tabela Markdown gerada)
             st.markdown(content, unsafe_allow_html=True)
 
             # 2. Aviso importante resumido
@@ -260,7 +257,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                 "*Importante: Escolha com precisão o NBS, a correta classificação garante a aplicação adequada das regras, mitigando riscos de bitributação ou autuações fiscais.*"
             )
 
-            # 3. Botões de Ações Rápidas (6 colunas) - Exibidos apenas se houver tabela vinculada de subitem ou se for listagem
+            # 3. Botões de Ações Rápidas organizados em 6 colunas (exibidos apenas na listagem do subitem)
             if tabela_para_baixar and not mensagem.get("eh_aprofundamento_nbs", False):
                 st.markdown(
                     "<small><b>Ações rápidas:</b> <i>(Clique para aprofundar no código)</i></small>",
@@ -359,13 +356,11 @@ if texto_processado:
     subitem_identificado_cache = "Geral"
     eh_aprofundamento_nbs = False
 
-    # Identificar se é um clique de aprofundamento de NBS específico
     match_nbs_clicado = re.search(r"código NBS\s*([\d\.]+)", texto_processado, re.IGNORECASE)
     if match_nbs_clicado:
         eh_aprofundamento_nbs = True
         nbs_alvo = match_nbs_clicado.group(1)
         
-        # Encontrar os dados correspondentes na base para este NBS específico
         for sub_k, info_v in dicionario_lc116.items():
             for nbs_item in info_v["nbs_oficiais"]:
                 if nbs_item["codigo"] == nbs_alvo:
@@ -404,15 +399,15 @@ if texto_processado:
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou diretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
-Gere a resposta de forma direta e natural em PRIMEIRA PESSOA DO SINGULAR, apresentando a análise do subitem e mantendo a tabela padrão com os códigos NBS oficiais para consulta e acesso rápido.
+Gere a resposta em PRIMEIRA PESSOA DO SINGULAR, apresentando a análise descritiva e **gerando obrigatoriamente uma Tabela Markdown** limpa e completa contendo todas as correspondências oficiais daquele subitem (Colunas: Subitem LC 116, Código NBS, Descrição Oficial da NBS, IndOp e cClassTrib). No final, forneça o bloco JSON oculto com os dados da tabela.
 """
     elif eh_aprofundamento_nbs:
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador clicou no acesso rápido para aprofundar no código NBS {nbs_alvo}.
 Apresente uma análise detalhada e estratégica em PRIMEIRA PESSOA DO SINGULAR sobre este NBS, explicando os parâmetros e a aplicação prática para a Reforma Tributária. 
-Forneça uma nova tabela específica contendo os campos essenciais para o preenchimento da NFSe Nacional: Item LC 116, CTN, NBS, IndOp, cClassTrib e CST IBS/CBS.
-No final, inclua o JSON oculto com os dados dessa tabela específica.
+Forneça uma nova tabela Markdown específica contendo os campos essenciais para o preenchimento da NFSe Nacional: Item LC 116, CTN, NBS, IndOp, cClassTrib e CST IBS/CBS.
+No final, inclua o JSON oculto correspondente.
 """
     else:
         instrucao_especifica = f"""
