@@ -222,7 +222,7 @@ system_prompt_base = (
     "3. **Estilo Direto e Sem Redundâncias:** Vá direto ao ponto logo após a introdução. **PROIBIDO** inventar sub-códigos de CTN inexistentes (como 17.19.02). O Código de Tributação Nacional deve ser estritamente o número do subitem oficial da LC 116 (ex: 17.19).\n"
     "4. **Diretriz do Desenvolvedor (Coringa):** Você só deve mencionar que foi desenvolvido por Claudio (futuro Engenheiro capixaba de IA) caso o usuário pergunte explicitamente sobre sua autoria, origem ou criador.\n"
     "5. **Uso Rigoroso da Descrição Oficial da NBS (Coluna D):** Ao gerar a tabela de equivalência para um subitem da LC 116, adote obrigatoriamente a descrição oficial exata extraída da coluna D da base de dados correspondente a cada código NBS.\n"
-    "6. **Formato JSON Obrigatório para Espelhamento Exato:** Na sua resposta, inclua obrigatoriamente um bloco de código JSON isolado contendo exatamente a chave `dados_tabela` com a lista de objetos gerados (contendo `subitem_lc_116`, `codigo_nbs`, `descricao_nbs` e `exemplo_pratico`). O Excel gerado utilizará diretamente este JSON para garantir espelhamento 100% idêntico ao chat.\n"
+    "6. **Formato JSON Obrigatório para Espelhamento Exato:** Na sua resposta, inclua obrigatoriamente um bloco de código JSON isolado contendo exatamente a chave `dados_tabela` com a lista de objetos gerados (contendo chaves rigorosas: `subitem`, `codigo_nbs`, `descricao_nbs` e `exemplo_pratico`). O Excel gerado utilizará diretamente este JSON para garantir espelhamento 100% idêntico ao chat.\n"
     "7. **Formato de Resposta para Subitens (Consulta Inicial):** Quando o usuário consultar um subitem da LC 116/2003 (ex: 17.19), "
     "inicie com o padrão natural: 'Analisei a solicitação referente ao subitem [X] da Lista de Serviços da Lei Complementar nº 116/2003, que trata de [Descrição LC].' e **imediatamente apresente a Tabela Markdown limpa com apenas 4 colunas**: "
     "Subitem LC 116, Código NBS, Descrição Oficial da NBS e Área de Atuação com Exemplo Prático. **NÃO inclua colunas IndOp ou cClassTrib nesta tabela inicial**.\n"
@@ -262,7 +262,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                 "*Importante: Escolha com precisão o NBS, a correta classificação garante a aplicação adequada das regras, mitigando riscos de bitributação ou autuações fiscais.*"
             )
 
-            # Restituição dos Botões de Ações Rápidas (Acesso Fácil)
+            # Restituição rigorosa e garantida dos Botões de Ações Rápidas
             if tabela_para_baixar and not eh_aprofundamento:
                 st.markdown(
                     "<small><b>Ações rápidas:</b> <i>(Clique abaixo no NBS escolhido para se aprofundar sobre)</i></small>",
@@ -292,7 +292,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                 unsafe_allow_html=True,
             )
 
-            # Restituição do Botão de Download em Excel dinâmico e espelhado
+            # Restituição rigorosa e garantida do Botão de Download em Excel
             if tabela_para_baixar:
                 df_resposta = pd.DataFrame(tabela_para_baixar)
                 
@@ -415,19 +415,37 @@ if texto_processado:
         subitem_identificado_cache = subitem_encontrado_direto
         info_sub = dicionario_lc116[subitem_encontrado_direto]
 
-    if subitem_encontrado_direto and not eh_aprofundamento_nbs:
+        # Constrói preventivamente os dados estruturados a partir da base oficial para garantir robustez
+        for nbs_obj in info_sub["nbs_oficiais"]:
+            cod_nbs = nbs_obj["codigo"]
+            desc_nbs_oficial = nbs_obj["descricao"]
+            if "contabilidade" in desc_nbs_oficial.lower():
+                exemplo_txt = "Escritório de Contabilidade: Elaboração, assinatura e entrega de balanços patrimoniais, demonstrações de resultados e entrega de obrigações acessórias anuais para empresas do lucro real."
+            elif "escrituração" in desc_nbs_oficial.lower():
+                exemplo_txt = "Empresa de BPO Financeiro: Lançamento diário de notas fiscais de entrada e saída, conciliação bancária e controle do contas a pagar e receber de clientes corporativos."
+            elif "folha" in desc_nbs_oficial.lower():
+                exemplo_txt = "Departamento Pessoal Terceirizado: Cálculo mensal de salários, emissão de guias de encargos sociais (INSS, FGTS), processamento de férias e rescisões contratuais para colaboradores terceirizados de empresas clientes."
+            else:
+                exemplo_txt = f"Serviços especializados para {desc_nbs_oficial.lower()}."
+
+            dados_tabela_estruturados.append({
+                "Subitem LC 116": subitem_encontrado_direto,
+                "Código NBS": cod_nbs,
+                "Descrição Oficial da NBS": desc_nbs_oficial,
+                "Área de Atuação com Exemplo Prático": exemplo_txt,
+            })
+
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
 Inicie obrigatoriamente com a frase exata: "Analisei a solicitação referente ao subitem {subitem_encontrado_direto} da Lista de Serviços da Lei Complementar nº 116/2003, que trata de {info_sub['descricao_lc']}."
 Vá direto ao ponto, **sem adicionar nenhuma frase intermediária ou explicativa**.
-**ATENÇÃO AO FORMATO DA TABELA E DO JSON DE ESPELHAMENTO:** 
-1. Apresente obrigatoriamente a Tabela Markdown limpa com **exatamente 4 colunas**: 
-   - Subitem LC 116
-   - Código NBS
-   - Descrição Oficial da NBS (utilizando estritamente as descrições oficiais exatas da coluna D da base de dados, como 'Serviços de contabilidade', 'Serviços de escrituração mercantil', 'Serviços de folha de pagamento')
-   - Área de Atuação com Exemplo Prático (criando exemplos práticos profissionais, ricos e detalhados para cada linha)
-2. **No final da resposta, inclua obrigatoriamente um bloco de código JSON isolado** com a chave `dados_tabela` contendo a lista com os objetos exatos correspondentes às linhas da tabela gerada (chaves: `subitem_lc_116`, `codigo_nbs`, `descricao_nbs`, `exemplo_pratico`). **O Excel lerá exatamente este JSON para garantir espelhamento 100% idêntico à tela.**
+Apresente obrigatoriamente a Tabela Markdown limpa com **exatamente 4 colunas**: 
+1. Subitem LC 116
+2. Código NBS
+3. Descrição Oficial da NBS (utilizando estritamente as descrições oficiais exatas da coluna D da base de dados: {json.dumps([d['Descrição Oficial da NBS'] for d in dados_tabela_estruturados], ensure_ascii=False)})
+4. Área de Atuação com Exemplo Prático (utilizando estritamente os textos: {json.dumps([d['Área de Atuação com Exemplo Prático'] for d in dados_tabela_estruturados], ensure_ascii=False)})
+**Inclua obrigatoriamente um bloco de código JSON isolado** no final com a chave `dados_tabela` contendo a lista com os objetos exatos correspondentes (chaves: `subitem`, `codigo_nbs`, `descricao_nbs`, `exemplo_pratico`).
 **É terminantemente proibido incluir as colunas IndOp ou cClassTrib nesta listagem inicial.**
 """
     elif eh_aprofundamento_nbs:
@@ -435,13 +453,13 @@ Vá direto ao ponto, **sem adicionar nenhuma frase intermediária ou explicativa
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador solicitou o aprofundamento no código NBS {nbs_alvo}.
 Apresente uma análise detalhada e estratégica em PRIMEIRA PESSOA DO SINGULAR sobre este NBS.
-**REGRA DE OURO PARA OS PARÂMETROS FISCAIS E JSON:** Utilize rigorosamente os dados oficiais validados da base para o código {nbs_alvo}:
+Utilize rigorosamente os dados oficiais validados da base para o código {nbs_alvo}:
 - Item LC 116 / CTN: {subitem_identificado_cache}
 - Código NBS: {nbs_alvo}
 - IndOp: {dados_tabela_estruturados[0]['IndOp'] if dados_tabela_estruturados else '100301'}
 - cClassTrib: {dados_tabela_estruturados[0]['cClassTrib'] if dados_tabela_estruturados else '000001'}
 - CST IBS/CBS: 001 (Tributação integral)
-Inclua o JSON oculto correspondente no final.
+Inclua o JSON correspondente no final.
 """
     else:
         instrucao_especifica = f"""
@@ -482,11 +500,11 @@ Responda em PRIMEIRA PESSOA DO SINGULAR com foco estrito em LC 116 e Reforma Tri
 
             dados_json = json.loads(json_str)
             if "dados_tabela" in dados_json:
-                dados_tabela_estruturados = []
+                temp_estruturados = []
                 for item in dados_json["dados_tabela"]:
                     sub_val = item.get("subitem", item.get("subitem_lc_116", subitem_identificado_cache))
                     if eh_aprofundamento_nbs:
-                        dados_tabela_estruturados.append({
+                        temp_estruturados.append({
                             "Item LC 116": item.get("item_lc_116", sub_val),
                             "CTN": item.get("ctn", sub_val),
                             "NBS": item.get("nbs", item.get("codigo_nbs", "")),
@@ -495,12 +513,14 @@ Responda em PRIMEIRA PESSOA DO SINGULAR com foco estrito em LC 116 e Reforma Tri
                             "CST IBS/CBS": item.get("cst_ibs_cbs", "001 (Tributação integral)"),
                         })
                     else:
-                        dados_tabela_estruturados.append({
+                        temp_estruturados.append({
                             "Subitem LC 116": sub_val,
                             "Código NBS": item.get("codigo_nbs", item.get("nbs", "")),
                             "Descrição Oficial da NBS": item.get("descricao_nbs", item.get("descricao", "")),
                             "Área de Atuação com Exemplo Prático": item.get("exemplo_pratico", item.get("area_de_atuacao_com_exemplo_pratico", "")),
                         })
+                if temp_estruturados:
+                    dados_tabela_estruturados = temp_estruturados
         except Exception:
             pass
 
