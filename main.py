@@ -124,8 +124,9 @@ st.components.v1.html(
     height=0,
 )
 
+# Cabeçalho limpo e descritivo no topo da página
 st.markdown(
-    '<p class="cabecalho-principal">⚖️ Tribô – Seu assistente na Reforma Tributária</p>',
+    '<p class="cabecalho-principal">⚖️ Assistente NBS & Reforma Tributária</p>',
     unsafe_allow_html=True,
 )
 st.markdown(
@@ -252,10 +253,13 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                         ),
                     })
 
+            # Nome do assistente posicionado exatamente ao lado do avatar do robô
+            st.markdown("**Tribô – Seu assistente na Reforma Tributária**")
+
             # 1. Texto principal da resposta da IA
             st.markdown(content, unsafe_allow_html=True)
 
-            # 2. Aviso importante resumido (único, sem duplicar)
+            # 2. Aviso importante resumido
             st.markdown(
                 "*Importante: Escolha com precisão o NBS, a correta classificação garante a aplicação adequada das regras, mitigando riscos de bitributação ou autuações fiscais.*"
             )
@@ -285,9 +289,6 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                                 f" {cod_nbs_atual}."
                             )
                             st.rerun()
-
-            # Nota: A tabela Markdown já vem renderizada dentro da variável `content` gerada pela IA, 
-            # portanto exibimos o rodapé de valorização e o botão logo abaixo.
 
             # 4. Rodapé de valorização do profissional contábil
             st.markdown(
