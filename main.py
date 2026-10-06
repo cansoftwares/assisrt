@@ -212,7 +212,8 @@ system_prompt_base = (
     " pessoa do singular** (ex: 'identifiquei', 'apresento', 'consultei'). É"
     " proibido o uso do plural.\n"
     "3. **Formato de Resposta para Subitens (Consulta Inicial):** Quando o usuário consultar um subitem da LC 116/2003 (ex: 17.19), "
-    "apresente a análise inicial em texto e **obrigatoriamente inclua uma Tabela Markdown limpa com apenas 4 colunas**: "
+    "apresente uma introdução **curta e direta** (apenas identificando o subitem e informando que apresenta a tabela abaixo, **sem repetições ou frases longas e genéricas**), e "
+    "**obrigatoriamente inclua uma Tabela Markdown limpa com apenas 4 colunas**: "
     "Subitem LC 116, Código NBS, Descrição Oficial da NBS e Área de Atuação com Exemplo Prático. **NÃO inclua colunas IndOp ou cClassTrib nesta tabela inicial**.\n"
     "4. **Foco Prático na NFSe Nacional (Ao aprofundar em um NBS via clique):** Quando solicitado o detalhamento de um código NBS específico via clique no botão rápido, "
     "apresente uma análise completa estruturada com os parâmetros fiscais avançados: Item LC 116, CTN, NBS, IndOp, cClassTrib e CST IBS/CBS.\n"
@@ -424,12 +425,13 @@ if texto_processado:
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou diretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
-Gere a resposta em PRIMEIRA PESSOA DO SINGULAR, apresentando a análise descritiva e **gerando obrigatoriamente uma Tabela Markdown limpa com exatamente 4 colunas**: 
+Gere a resposta em PRIMEIRA PESSOA DO SINGULAR. Apresente apenas uma linha identificando o subitem de forma limpa e direta, indo direto para a tabela a seguir.
+**ATENÇÃO AO FORMATO DA TABELA:** Gere obrigatoriamente uma Tabela Markdown limpa com **exatamente 4 colunas**: 
 1. Subitem LC 116
 2. Código NBS
 3. Descrição Oficial da NBS
 4. Área de Atuação com Exemplo Prático
-**ATENÇÃO:** É terminantemente proibido incluir as colunas IndOp ou cClassTrib nesta tabela inicial. No final, forneça o bloco JSON oculto correspondente.
+**É terminantemente proibido incluir as colunas IndOp ou cClassTrib nesta listagem inicial.** No final, forneça o bloco JSON oculto correspondente.
 """
     elif eh_aprofundamento_nbs:
         instrucao_especifica = f"""
