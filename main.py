@@ -412,15 +412,6 @@ if texto_processado:
     if subitem_encontrado_direto and not eh_aprofundamento_nbs:
         subitem_identificado_cache = subitem_encontrado_direto
         info_sub = dicionario_lc116[subitem_encontrado_direto]
-        for nbs_obj in info_sub["nbs_oficiais"]:
-            cod_nbs = nbs_obj["codigo"]
-            desc_nbs_oficial = nbs_obj["descricao"]
-            dados_tabela_estruturados.append({
-                "Subitem LC 116": subitem_encontrado_direto,
-                "Código NBS": cod_nbs,
-                "Descrição Oficial da NBS": desc_nbs_oficial,
-                "Área de Atuação com Exemplo Prático": f"Análise operacional e enquadramento para {desc_nbs_oficial.lower()}."
-            })
 
     if subitem_encontrado_direto and not eh_aprofundamento_nbs:
         instrucao_especifica = f"""
@@ -428,13 +419,13 @@ if texto_processado:
 O utilizador mencionou o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
 Inicie obrigatoriamente com a frase exata: "Analisei a solicitação referente ao subitem {subitem_encontrado_direto} da Lista de Serviços da Lei Complementar nº 116/2003, que trata de {info_sub['descricao_lc']}."
 Vá direto ao ponto, **sem adicionar nenhuma frase intermediária ou explicativa**.
-**ATENÇÃO AO FORMATO DA TABELA E DO JSON:** 
-Apresente obrigatoriamente a Tabela Markdown limpa com **exatamente 4 colunas**: 
-1. Subitem LC 116
-2. Código NBS
-3. Descrição Oficial da NBS (utilizando estritamente as descrições oficiais da coluna D da base de dados)
-4. Área de Atuação com Exemplo Prático (fornecendo exemplos ricos, profissionais e detalhados correspondentes a cada NBS)
-**No final da resposta, inclua obrigatoriamente um bloco de código JSON isolado** com a chave `dados_tabela` contendo uma lista com os objetos exatos correspondentes às linhas da tabela gerada (chaves: `subitem_lc_116`, `codigo_nbs`, `descricao_nbs`, `exemplo_pratico`), para que o Excel baixe exatamente o conteúdo exibido na tela.
+**ATENÇÃO AO FORMATO DA TABELA E DO JSON DE ESPELHAMENTO:** 
+1. Apresente obrigatoriamente a Tabela Markdown limpa com **exatamente 4 colunas**: 
+   - Subitem LC 116
+   - Código NBS
+   - Descrição Oficial da NBS (utilizando estritamente as descrições oficiais exatas da coluna D da base de dados, como 'Serviços de contabilidade', 'Serviços de escrituração mercantil', 'Serviços de folha de pagamento')
+   - Área de Atuação com Exemplo Prático (criando exemplos práticos profissionais, ricos e detalhados para cada linha)
+2. **No final da resposta, inclua obrigatoriamente um bloco de código JSON isolado** com a chave `dados_tabela` contendo a lista com os objetos exatos correspondentes às linhas da tabela gerada (chaves: `subitem_lc_116`, `codigo_nbs`, `descricao_nbs`, `exemplo_pratico`). **O Excel lerá exatamente este JSON para garantir espelhamento 100% idêntico à tela.**
 **É terminantemente proibido incluir as colunas IndOp ou cClassTrib nesta listagem inicial.**
 """
     elif eh_aprofundamento_nbs:
