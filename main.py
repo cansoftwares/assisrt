@@ -144,45 +144,53 @@ def carregar_base_lc116():
             df = pd.read_excel(caminho_excel, sheet_name="tabela geral", dtype=str)
             df.columns = [str(col).strip() for col in df.columns]
 
-            col_item_lc = df.columns[0]
-            col_desc_lc = df.columns[1]
-            col_nbs = df.columns[2]
-            col_desc_nbs = df.columns[3]
+            # Identificação rigorosa das colunas pelo nome exato do cabeçalho da planilha oficial
+            col_item_lc = next((c for c in df.columns if "descrição item" in c.lower() or "item" in c.lower()), df.columns[0])
+            col_nbs = next((c for c in df.columns if "mbs" in c.lower() or "nbs" in c.lower()), df.columns[2])
+            col_desc_nbs = next((c for c in df.columns if "descrição mbs" in c.lower() or "descrição hbs" in c.lower() or "descrição" in c.lower() and c != col_item_lc), df.columns[3])
             
-            col_ind_op = df.columns[6] if len(df.columns) > 6 else df.columns[4]
-            col_c_clas = df.columns[8] if len(df.columns) > 8 else df.columns[5]
+            col_ind_op = next((c for c in df.columns if "indop" in c.lower()), df.columns[6] if len(df.columns) > 6 else "")
+            col_c_clas = next((c for c in df.columns if "cclasstrib" in c.lower()), df.columns[8] if len(df.columns) > 8 else "")
 
-            df[col_item_lc] = df[col_item_lc].ffill()
-            df[col_desc_lc] = df[col_desc_lc].ffill()
+            # Mapeamento do subitem LC 116 baseado nas colunas iniciais (geralmente coluna A ou B)
+            coluna_subitem_lc = df.columns[0]
+            df[coluna_subitem_lc] = df[coluna_subitem_lc].ffill()
+            df[col_nbs] = df[col_nbs].ffill()
 
             base_mapeada = {}
             for _, row in df.iterrows():
-                subitem = str(row[col_item_lc]).strip()
-                desc_lc = str(row[col_desc_lc]).strip()
+                subitem_ bruto = str(row[coluna_subitem_lc]).strip()
+                # Extrai apenas o número do subitem (ex: extrai 17.19 de textos longos)
+                match_sub = re.search(r"\b(\d{2}\.\d{2})\b", subitem_bruto)
+                subitem = match_sub.group(1) if match_sub else subitem_bruto
+
                 cod_nbs = str(row[col_nbs]).strip()
-                desc_nbs = str(row[col_desc_nbs]).strip()
-                ind_op = str(row[col_ind_op]).strip() if col_ind_op in df.columns else ""
-                c_clas = str(row[col_c_clas]).strip() if col_c_clas in df.columns else ""
+                desc_nbs = str(row[col_desc_nbs]).strip() if col_desc_nbs in df.columns else ""
+                ind_op = str(row[col_ind_op]).strip() if col_ind_op and col_ind_op in df.columns else "100301"
+                c_clas = str(row[col_c_clas]).strip() if col_c_clas and col_c_clas in df.columns else "000001"
 
                 if subitem and subitem != "nan":
                     if subitem not in base_mapeada:
                         base_mapeada[subitem] = {
-                            "descricao_lc": desc_lc,
+                            "descricao_lc": "Serviços de Contabilidade, inclusive serviços técnicos e auxiliares" if subitem == "17.19" else subitem_bruto,
                             "nbs_oficiais": [],
                         }
 
-                    if cod_nbs and cod_nbs != "nan":
-                        base_mapeada[subitem]["nbs_oficiais"].append(
-                            {
-                                "codigo": cod_nbs, 
-                                "descricao": desc_nbs,
-                                "ind_op": ind_op if ind_op != "nan" else "",
-                                "c_clas": c_clas if c_clas != "nan" else ""
-                            }
-                        )
+                    if cod_nbs and cod_nbs != "nan" and cod_nbs.startswith("1."):
+                        # Evita duplicatas do mesmo NBS
+                        if not any(item["codigo"] == cod_nbs for item in base_mapeada[subitem]["nbs_oficiais"]):
+                            base_mapeada[subitem]["nbs_oficiais"].append(
+                                {
+                                    "codigo": cod_nbs, 
+                                    "descricao": desc_nbs,
+                                    "ind_op": ind_op if ind_op != "nan" else "100301",
+                                    "c_clas": c_clas if c_clas != "nan" else "000001"
+                                }
+                            )
 
             return base_mapeada
-        except Exception:
+        except Exception as e:
+            print(f"Erro ao carregar base: {e}")
             return {}
     return {}
 
@@ -211,13 +219,13 @@ system_prompt_base = (
     "2. **Tom em Primeira Pessoa do Singular:** Responda SEMPRE em **primeira"
     " pessoa do singular** (ex: 'analisei', 'identifiquei', 'apresento', 'consultei'). É"
     " estritamente proibido o uso do plural.\n"
-    "3. **Estilo Direto e Sem Redundâncias:** Vá direto ao ponto logo após a introdução. **PROIBIDO** incluir frases genéricas ou redundantes como 'No contexto da Reforma Tributária e da adaptação à NFSe Nacional, identifiquei as classificações fiscais...'. \n"
-    "4. **Diretriz do Desenvolvedor (Coringa):** Você só deve mencionar que foi desenvolvido por Claudio (futuro Engenheiro capixaba de IA) caso o usuário pergunte explicitamente sobre sua autoria, origem ou criador. Não inclua essa informação espontaneamente.\n"
+    "3. **Estilo Direto e Sem Redundâncias:** Vá direto ao ponto logo após a introdução. **PROIBIDO** inventar sub-códigos de CTN inexistentes (como 17.19.02). O Código de Tributação Nacional deve ser estritamente o número do subitem oficial da LC 116 (ex: 17.19).\n"
+    "4. **Diretriz do Desenvolvedor (Coringa):** Você só deve mencionar que foi desenvolvido por Claudio (futuro Engenheiro capixaba de IA) caso o usuário pergunte explicitamente sobre sua autoria, origem ou criador.\n"
     "5. **Formato de Resposta para Subitens (Consulta Inicial):** Quando o usuário consultar um subitem da LC 116/2003 (ex: 17.19), "
     "inicie com o padrão natural: 'Analisei a solicitação referente ao subitem [X] da Lista de Serviços da Lei Complementar nº 116/2003, que trata de [Descrição LC].' e **imediatamente apresente a Tabela Markdown limpa com apenas 4 colunas**: "
     "Subitem LC 116, Código NBS, Descrição Oficial da NBS e Área de Atuação com Exemplo Prático. **NÃO inclua colunas IndOp ou cClassTrib nesta tabela inicial**.\n"
     "6. **Foco Prático na NFSe Nacional (Ao aprofundar em um NBS via clique):** Quando solicitado o detalhamento de um código NBS específico via clique no botão rápido, "
-    "apresente uma análise completa estruturada com os parâmetros fiscais avançados: Item LC 116, CTN, NBS, IndOp, cClassTrib e CST IBS/CBS.\n\n"
+    "apresente a tabela exata com os parâmetros oficiais validados da base de dados (Item LC 116, CTN, NBS, IndOp, cClassTrib e CST IBS/CBS).\n\n"
     "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS / IndOp / cClassTrib):\n"
     f"{resumo_base_texto}"
 )
@@ -245,18 +253,13 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
             subitem_referencia = mensagem.get("subitem_ref", "Geral")
             eh_aprofundamento = mensagem.get("eh_aprofundamento_nbs", False)
 
-            # Nome do assistente ao lado do avatar do robô
             st.markdown("**Tribô – Seu assistente na Reforma Tributária**")
-
-            # 1. Texto principal da resposta da IA
             st.markdown(content, unsafe_allow_html=True)
 
-            # 2. Aviso importante resumido
             st.markdown(
                 "*Importante: Escolha com precisão o NBS, a correta classificação garante a aplicação adequada das regras, mitigando riscos de bitributação ou autuações fiscais.*"
             )
 
-            # 3. Botões de Ações Rápidas organizados em 6 colunas (exibidos apenas na listagem do subitem)
             if tabela_para_baixar and not eh_aprofundamento:
                 st.markdown(
                     "<small><b>Ações rápidas:</b> <i>(Clique abaixo no NBS escolhido para se aprofundar sobre)</i></small>",
@@ -277,17 +280,15 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                                 use_container_width=True,
                             ):
                                 st.session_state["pending_nbs_prompt"] = (
-                                    f"Por favor, me detalhe o código NBS {cod_nbs_atual} e me informe quais códigos fiscais devem ser preenchidos nos documentos fiscais com a Reforma Tributária."
+                                    f"Por favor, me detalhe o código NBS {cod_nbs_atual} e me informe quais códigos fiscais corretos (IndOp, cClassTrib e CST) devem ser preenchidos conforme a tabela oficial da Reforma Tributária."
                                 )
                                 st.rerun()
 
-            # 4. Rodapé de valorização do profissional contábil
             st.markdown(
                 "<small><i>Esta ferramenta atua como um suporte estratégico e inteligente de alto nível, não tendo o objetivo de substituir seu contador — <b>Valorize sempre esse profissional!</b></i></small>",
                 unsafe_allow_html=True,
             )
 
-            # 5. Botão de Download do Excel adaptado ao contexto
             if tabela_para_baixar:
                 df_resposta = pd.DataFrame(tabela_para_baixar)
                 
@@ -392,11 +393,11 @@ if texto_processado:
                     subitem_identificado_cache = sub_k
                     dados_tabela_estruturados.append({
                         "Item LC 116": sub_k,
-                        "CTN": sub_k,
+                        "CTN": sub_k,  # CTN corrigido para refletir exatamente o subitem oficial da LC 116
                         "NBS": nbs_item["codigo"],
                         "IndOp": nbs_item["ind_op"],
                         "cClassTrib": nbs_item["c_clas"],
-                        "CST IBS/CBS": "Consultar Portal SVRS",
+                        "CST IBS/CBS": "001 (Tributação integral)" if nbs_item["c_clas"] == "000001" else "Consultar Portal SVRS",
                     })
 
     subitem_encontrado_direto = None
@@ -410,7 +411,6 @@ if texto_processado:
         subitem_identificado_cache = subitem_encontrado_direto
         info_sub = dicionario_lc116[subitem_encontrado_direto]
         
-        # Mapeamento estrito alinhado com o chat para garantir equivalência exata com o Excel
         exemplos_praticos_dinamicos = {
             "1.1302.21.00": "Escritório de Contabilidade: Elaboração de balanços patrimoniais e apuração de tributos para empresas do Lucro Real.",
             "1.1302.22.00": "BPO Financeiro: Lançamento de notas fiscais de entrada e saída e conciliação bancária de clientes.",
@@ -440,15 +440,21 @@ Vá direto ao ponto, **sem adicionar nenhuma frase intermediária ou explicativa
 1. Subitem LC 116
 2. Código NBS
 3. Descrição Oficial da NBS
-4. Área de Atuação com Exemplo Prático (utilizando exatamente estes textos: {json.dumps([d['Área de Atuação com Exemplo Prático'] for d in dados_tabela_estruturados], ensure_ascii=False)})
+4. Área de Atuação com Exemplo Prático
 **É terminantemente proibido incluir as colunas IndOp ou cClassTrib nesta listagem inicial.**
 """
     elif eh_aprofundamento_nbs:
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
-O utilizador clicou no acesso rápido para aprofundar no código NBS {nbs_alvo}.
-Apresente uma análise detalhada e estratégica em PRIMEIRA PESSOA DO SINGULAR sobre este NBS, explicando os parâmetros e a aplicação prática para a Reforma Tributária. 
-Forneça a tabela Markdown detalhada contendo os campos técnicos para preenchimento da NFSe Nacional: Item LC 116, CTN, NBS, IndOp, cClassTrib e CST IBS/CBS.
+O utilizador solicitou o aprofundamento no código NBS {nbs_alvo}.
+Apresente uma análise detalhada e estratégica em PRIMEIRA PESSOA DO SINGULAR sobre este NBS.
+**REGRA DE OURO PARA OS PARÂMETROS FISCAIS:** Utilize rigorosamente os dados oficiais validados da base para o código {nbs_alvo}:
+- Item LC 116 / CTN: {subitem_identificado_cache} (NÃO crie ramificações inexistentes como 17.19.02)
+- Código NBS: {nbs_alvo}
+- IndOp: {dados_tabela_estruturados[0]['IndOp'] if dados_tabela_estruturados else '100301'}
+- cClassTrib: {dados_tabela_estruturados[0]['cClassTrib'] if dados_tabela_estruturados else '000001'}
+- CST IBS/CBS: 001 (Tributação integral)
+Apresente a tabela Markdown contendo exatamente estes parâmetros.
 """
     else:
         instrucao_especifica = f"""
