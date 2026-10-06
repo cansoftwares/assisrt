@@ -212,8 +212,8 @@ system_prompt_base = (
     " pessoa do singular** (ex: 'identifiquei', 'apresento', 'consultei'). É"
     " proibido o uso do plural.\n"
     "3. **Formato de Resposta para Subitens:** Quando o usuário consultar um subitem da LC 116/2003 (ex: 17.19), "
-    "apresente a análise inicial em texto e **obrigatoriamente inclua uma Tabela Markdown** contendo todas as correspondências "
-    "oficiais (Subitem, Código NBS, Descrição Oficial da NBS, IndOp e cClassTrib).\n"
+    "apresente a análise inicial em texto e **obrigatoriamente inclua uma Tabela Markdown completa com 6 colunas**: "
+    "Subitem LC 116, Código NBS, Descrição Oficial da NBS, IndOp, cClassTrib e Área de Atuação com Exemplo Prático.\n"
     "4. **Foco Prático na NFSe Nacional (Ao aprofundar em um NBS via clique):** Quando solicitado o detalhamento de um código NBS específico via clique no botão rápido, "
     "apresente uma análise completa estruturada com os parâmetros oficiais para preenchimento: Item LC 116, CTN, NBS, IndOp, cClassTrib e CST IBS/CBS.\n"
     "5. **Formato JSON Oculto:** Forneça no final o bloco JSON exato com a"
@@ -249,7 +249,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
             # Nome do assistente ao lado do avatar do robô
             st.markdown("**Tribô – Seu assistente na Reforma Tributária**")
 
-            # 1. Texto principal da resposta da IA (incluindo a tabela Markdown gerada)
+            # 1. Texto principal da resposta da IA (incluindo a tabela Markdown de 6 colunas)
             st.markdown(content, unsafe_allow_html=True)
 
             # 2. Aviso importante resumido
@@ -399,7 +399,7 @@ if texto_processado:
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou diretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
-Gere a resposta em PRIMEIRA PESSOA DO SINGULAR, apresentando a análise descritiva e **gerando obrigatoriamente uma Tabela Markdown** limpa e completa contendo todas as correspondências oficiais daquele subitem (Colunas: Subitem LC 116, Código NBS, Descrição Oficial da NBS, IndOp e cClassTrib). No final, forneça o bloco JSON oculto com os dados da tabela.
+Gere a resposta em PRIMEIRA PESSOA DO SINGULAR, apresentando a análise descritiva e **gerando obrigatoriamente uma Tabela Markdown completa com 6 colunas** (Subitem LC 116, Código NBS, Descrição Oficial da NBS, IndOp, cClassTrib e Área de Atuação com Exemplo Prático) contendo todas as correspondências oficiais daquele subitem. No final, forneça o bloco JSON oculto correspondente.
 """
     elif eh_aprofundamento_nbs:
         instrucao_especifica = f"""
