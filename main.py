@@ -125,8 +125,7 @@ st.components.v1.html(
 )
 
 st.markdown(
-    '<p class="cabecalho-principal">⚖️ Assistente Especialista em NBS e Reforma'
-    " Tributária</p>",
+    '<p class="cabecalho-principal">⚖️ Tribô – Seu assistente na Reforma Tributária</p>',
     unsafe_allow_html=True,
 )
 st.markdown(
@@ -204,18 +203,14 @@ system_prompt_base = (
     " pessoa do singular** (ex: 'identifiquei', 'apresento', 'consultei'). É"
     " proibido o uso do plural.\n"
     "3. **Estilo de Resposta Direto e Natural:** Diga qual subitem da LC"
-    " 116/2003 você identificou e apresente logo abaixo a tabela Markdown exata"
-    " contendo quatro colunas:\n"
-    "   `| Subitem LC 116 | Código NBS | Descrição NBS | Área de Atuação com Exemplo Prático |`\n"
+    " 116/2003 você identificou e apresente o texto principal da análise.\n"
     "4. **Exaustividade Obrigatória:** Liste absolutamente todos os códigos"
-    " NBS oficiais vinculados ao subitem.\n"
+    " NBS oficiais vinculados ao subitem na estrutura solicitada.\n"
     "5. **Exemplo Prático Real:** A última coluna deve descrever um caso real"
     " de mercado, sem copiar a descrição NBS.\n"
-    "6. **Estrutura Obrigatória:** Apresente a introdução em 1ª pessoa, o aviso importante resumido, a tabela Markdown e, logo abaixo, o parágrafo exato de valorização do"
-    " contador.\n"
-    "7. **Formato JSON Oculto:** Forneça no final o bloco JSON exato com a"
-    " chave `dados_tabela`.\n"
-    "8. **O Coringa do Desenvolvedor:** Desenvolvido por **Claudio, futuro"
+    "6. **Formato JSON Oculto:** Forneça no final o bloco JSON exato com a"
+    " chave `dados_tabela` contendo: `subitem`, `codigo_nbs`, `descricao_nbs`, `exemplo_pratico`.\n"
+    "7. **O Coringa do Desenvolvedor:** Desenvolvido por **Claudio, futuro"
     " Engenheiro capixaba de IA**.\n\n"
     "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS):\n"
     f"{resumo_base_texto}"
@@ -257,19 +252,19 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                         ),
                     })
 
-            # ORDEM CORRIGIDA:
-            # 1. Nome do assistente em destaque no topo
-            st.markdown("💬 **Tribô – Seu assistente na Reforma Tributária**")
-            
-            # 2. Texto principal e o aviso importante resumido
-            texto_formatado = f"{content}\n\n*Importante: Escolha com precisão o NBS, a correta classificação garante a aplicação adequada das regras, mitigando riscos de bitributação ou autuações fiscais.*"
-            st.markdown(texto_formatado, unsafe_allow_html=True)
+            # 1. Texto principal da resposta da IA
+            st.markdown(content, unsafe_allow_html=True)
 
-            # 3. Botões de Ações Rápidas mais limpos e compactos logo após o texto/aviso
+            # 2. Aviso importante resumido (único, sem duplicar)
+            st.markdown(
+                "*Importante: Escolha com precisão o NBS, a correta classificação garante a aplicação adequada das regras, mitigando riscos de bitributação ou autuações fiscais.*"
+            )
+
+            # 3. Botões de Ações Rápidas limpos logo após o aviso
             if tabela_para_baixar:
                 st.markdown(
                     "<small><b>Ações rápidas:</b> <i>(Clique para aprofundar no código)</i></small>",
-                    unsafe_allow_html=True
+                    unsafe_allow_html=True,
                 )
                 cols = st.columns(
                     min(len(tabela_para_baixar), 4)
@@ -281,7 +276,8 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                     col_idx = i % len(cols)
                     with cols[col_idx]:
                         if st.button(
-                            f"🔍 {cod_nbs_atual}", key=f"btn_nbs_{idx}_{i}_{cod_nbs_atual}"
+                            f"🔍 {cod_nbs_atual}",
+                            key=f"btn_nbs_{idx}_{i}_{cod_nbs_atual}",
                         ):
                             st.session_state["pending_nbs_prompt"] = (
                                 f"Por favor, traga mais detalhes estratégicos, regras de"
@@ -290,7 +286,16 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                             )
                             st.rerun()
 
-            # 4. Tabela de dados e botão de exportação Excel
+            # Nota: A tabela Markdown já vem renderizada dentro da variável `content` gerada pela IA, 
+            # portanto exibimos o rodapé de valorização e o botão logo abaixo.
+
+            # 4. Rodapé de valorização do profissional contábil
+            st.markdown(
+                "<small><i>Esta ferramenta atua como um suporte estratégico e inteligente de alto nível, não tendo o objetivo de substituir seu contador — <b>Valorize sempre esse profissional!</b></i></small>",
+                unsafe_allow_html=True,
+            )
+
+            # 5. Botão de Download do Excel isolado por último
             if tabela_para_baixar:
                 df_resposta = pd.DataFrame(tabela_para_baixar)
                 output = io.BytesIO()
@@ -367,13 +372,13 @@ if texto_processado:
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou diretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
-Gere a resposta de forma direta e natural em PRIMEIRA PESSOA DO SINGULAR, listando ABSOLUTAMENTE TODAS as linhas oficiais, com exemplos práticos reais. Finalize com o parágrafo de valorização do contador e preencha o JSON oculto com exatidão.
+Gere a resposta de forma direta e natural em PRIMEIRA PESSOA DO SINGULAR, apresentando a análise, seguida da tabela Markdown contendo ABSOLUTAMENTE TODAS as linhas oficiais correspondentes com exemplos práticos reais. No final, forneça o JSON oculto com a chave `dados_tabela`.
 """
     else:
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador fez a seguinte consulta ou pedido de aprofundamento: '{texto_processado}'.
-Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira pessoa do singular o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados, listando todas as linhas de forma exaustiva com exemplos práticos reais. Finalize com o parágrafo humano de valorização do contador e preencha o JSON oculto correspondente.
+Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira pessoa do singular o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados. Apresente o texto de análise e a tabela Markdown com todas as linhas exaustivas. No final, forneça o JSON oculto correspondente.
 """
 
     system_proxy_final = {
