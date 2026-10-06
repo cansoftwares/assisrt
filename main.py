@@ -68,20 +68,32 @@ st.markdown(
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
     }
 
-    /* Container flexível para os botões de ações rápidas ficarem próximos e quebrarem linha responsivamente */
-    .acoes-rapidas-container {
+    /* FORÇA OS BOTÕES A FICAREM LADO A LADO EM FORMATO DE GRID COMPACTO */
+    .acoes-rapidas-wrapper {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
+        gap: 6px 8px;
         align-items: center;
-        margin-top: 6px;
-        margin-bottom: 10px;
+        margin-top: 8px;
+        margin-bottom: 12px;
     }
 
-    /* Faz com que cada elemento de botão individual dentro da área se ajuste organicamente ao texto */
-    .acoes-rapidas-container > div {
+    /* Anula o comportamento de bloco inteiro que o Streamlit impõe nas divs dos botões */
+    .acoes-rapidas-wrapper div[data-testid="stHorizontalBlock"], 
+    .acoes-rapidas-wrapper div.stButton,
+    .acoes-rapidas-wrapper > div {
+        display: inline-block !important;
         width: auto !important;
-        flex: 0 0 auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Ajusta o botão em si para ficar limpo e compacto */
+    .acoes-rapidas-wrapper button {
+        height: auto !important;
+        padding: 4px 10px !important;
+        font-size: 0.85rem !important;
+        border-radius: 6px !important;
     }
 
     table {
@@ -146,9 +158,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.markdown(
-    "Consulte códigos de serviços da LC 116/2003, descrições normativas"
-    " oficiais e correspondências detalhadas de equivalência NBS para o"
-    " ecossistema tributário."
+    "Consulte códigos de serviços da LC 116/2003, descrições normativas oficiais e correspondências detalhadas de equivalência NBS para o ecossistema tributário."
 )
 
 
@@ -280,14 +290,14 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                 "*Importante: Escolha com precisão o NBS, a correta classificação garante a aplicação adequada das regras, mitigando riscos de bitributação ou autuações fiscais.*"
             )
 
-            # 3. Botões de Ações Rápidas compactos dispostos de forma fluida sem colunas rígidas
+            # 3. Botões de Ações Rápidas compactos dispostos lado a lado com quebra responsiva limpa
             if tabela_para_baixar:
                 st.markdown(
                     "<small><b>Ações rápidas:</b> <i>(Clique para aprofundar no código)</i></small>",
                     unsafe_allow_html=True,
                 )
                 
-                st.markdown('<div class="acoes-rapidas-container">', unsafe_allow_html=True)
+                st.markdown('<div class="acoes-rapidas-wrapper">', unsafe_allow_html=True)
                 for i, row_data in enumerate(tabela_para_baixar):
                     cod_nbs_atual = row_data.get("Código NBS", "")
                     if st.button(
