@@ -143,18 +143,20 @@ def carregar_base_lc116():
             df = pd.read_excel(caminho_excel, sheet_name="tabela geral", dtype=str)
             df.columns = [str(col).strip() for col in df.columns]
 
-            # Mapeamento robusto das colunas oficiais do Anexo VIII
+            # Mapeamento estrito das colunas oficiais
             coluna_subitem_lc = df.columns[0]
+            coluna_desc_lc = df.columns[1] if len(df.columns) > 1 else df.columns[0]
             col_nbs = next((c for c in df.columns if "mbs" in c.lower() or "nbs" in c.lower()), df.columns[2])
             
-            # Identifica com precisão a coluna de descrição da NBS (geralmente DESCRICAO HBS / coluna D)
-            col_desc_nbs = next((c for c in df.columns if "descrição" in c.lower() and c != df.columns[0] and c != col_nbs), df.columns[3] if len(df.columns) > 3 else df.columns[2])
-            
+            # Localiza rigorosamente a coluna D ("DESCRIÇÃO MBS" / "DESCRIÇÃO HBS")
+            col_desc_nbs = next((c for c in df.columns if "descrição" in c.lower() and ("mbs" in c.lower() or "hbs" in c.lower())), df.columns[3] if len(df.columns) > 3 else df.columns[2])
+
             col_ind_op = next((c for c in df.columns if "indop" in c.lower()), df.columns[6] if len(df.columns) > 6 else "")
             col_c_clas = next((c for c in df.columns if "cclasstrib" in c.lower()), df.columns[8] if len(df.columns) > 8 else "")
 
-            # Propaga valores mesclados/vazios para manter a consistência da tabela
+            # Propaga valores mesclados verticalmente
             df[coluna_subitem_lc] = df[coluna_subitem_lc].ffill()
+            df[coluna_desc_lc] = df[coluna_desc_lc].ffill()
             df[col_nbs] = df[col_nbs].ffill()
             if col_desc_nbs in df.columns:
                 df[col_desc_nbs] = df[col_desc_nbs].ffill()
@@ -165,15 +167,17 @@ def carregar_base_lc116():
                 match_sub = re.search(r"\b(\d{2}\.\d{2})\b", subitem_bruto)
                 subitem = match_sub.group(1) if match_sub else subitem_bruto
 
+                desc_lc_oficial = str(row[coluna_desc_lc]).strip() if pd.notna(row[coluna_desc_lc]) else subitem_bruto
                 cod_nbs = str(row[col_nbs]).strip()
                 desc_nbs = str(row[col_desc_nbs]).strip() if col_desc_nbs in df.columns and pd.notna(row[col_desc_nbs]) else ""
+                
                 ind_op = str(row[col_ind_op]).strip() if col_ind_op and col_ind_op in df.columns and pd.notna(row[col_ind_op]) else "100301"
                 c_clas = str(row[col_c_clas]).strip() if col_c_clas and col_c_clas in df.columns and pd.notna(row[col_c_clas]) else "000001"
 
                 if subitem and subitem != "nan":
                     if subitem not in base_mapeada:
                         base_mapeada[subitem] = {
-                            "descricao_lc": "Serviços de Contabilidade, inclusive serviços técnicos e auxiliares" if subitem == "17.19" else subitem_bruto,
+                            "descricao_lc": desc_lc_oficial,
                             "nbs_oficiais": [],
                         }
 
@@ -182,7 +186,7 @@ def carregar_base_lc116():
                             base_mapeada[subitem]["nbs_oficiais"].append(
                                 {
                                     "codigo": cod_nbs, 
-                                    "descricao": desc_nbs if desc_nbs and desc_nbs != "nan" else "Serviço de Contabilidade e Escrituração",
+                                    "descricao": desc_nbs if desc_nbs and desc_nbs != "nan" else "Serviço associado",
                                     "ind_op": ind_op if ind_op != "nan" else "100301",
                                     "c_clas": c_clas if c_clas != "nan" else "000001"
                                 }
@@ -200,11 +204,11 @@ dicionario_lc116 = carregar_base_lc116()
 resumo_base_texto = ""
 for subitem_k, info_v in dicionario_lc116.items():
     resumo_base_texto += (
-        f"Subitem LC 116: {subitem_k} - Descrição: {info_v['descricao_lc']}\n"
+        f"Subitem LC 116: {subitem_k} - Descrição do Item: {info_v['descricao_lc']}\n"
     )
     for nbs_item in info_v["nbs_oficiais"]:
         resumo_base_texto += (
-            f"    -> NBS: {nbs_item['codigo']} | Descrição NBS: {nbs_item['descricao']} | "
+            f"    -> NBS: {nbs_item['codigo']} | Descrição Oficial NBS (Coluna D do Excel): {nbs_item['descricao']} | "
             f"IndOp: {nbs_item['ind_op']} | cClassTrib: {nbs_item['c_clas']}\n"
         )
 
@@ -221,10 +225,11 @@ system_prompt_base = (
     " estritamente proibido o uso do plural.\n"
     "3. **Estilo Direto e Sem Redundâncias:** Vá direto ao ponto logo após a introdução. **PROIBIDO** inventar sub-códigos de CTN inexistentes (como 17.19.02). O Código de Tributação Nacional deve ser estritamente o número do subitem oficial da LC 116 (ex: 17.19).\n"
     "4. **Diretriz do Desenvolvedor (Coringa):** Você só deve mencionar que foi desenvolvido por Claudio (futuro Engenheiro capixaba de IA) caso o usuário pergunte explicitamente sobre sua autoria, origem ou criador.\n"
-    "5. **Formato de Resposta para Subitens (Consulta Inicial):** Quando o usuário consultar um subitem da LC 116/2003 (ex: 17.19), "
+    "5. **Uso Rigoroso da Descrição Oficial da NBS (Coluna D):** Ao gerar a tabela de equivalência para um subitem da LC 116, adote obrigatoriamente a descrição oficial exata extraída da coluna D da base de dados correspondente a cada código NBS (ex: 'Serviços de contabilidade', 'Serviços de escrituração mercantil', 'Serviços de folha de pagamento'), mantendo a perfeita harmonia com os exemplos práticos profissionais.\n"
+    "6. **Formato de Resposta para Subitens (Consulta Inicial):** Quando o usuário consultar um subitem da LC 116/2003 (ex: 17.19), "
     "inicie com o padrão natural: 'Analisei a solicitação referente ao subitem [X] da Lista de Serviços da Lei Complementar nº 116/2003, que trata de [Descrição LC].' e **imediatamente apresente a Tabela Markdown limpa com apenas 4 colunas**: "
     "Subitem LC 116, Código NBS, Descrição Oficial da NBS e Área de Atuação com Exemplo Prático. **NÃO inclua colunas IndOp ou cClassTrib nesta tabela inicial**.\n"
-    "6. **Foco Prático na NFSe Nacional (Ao aprofundar em um NBS via clique):** Quando solicitado o detalhamento de um código NBS específico via clique no botão rápido, "
+    "7. **Foco Prático na NFSe Nacional (Ao aprofundar em um NBS via clique):** Quando solicitado o detalhamento de um código NBS específico via clique no botão rápido, "
     "apresente a tabela exata com os parâmetros oficiais validados da base de dados (Item LC 116, CTN, NBS, IndOp, cClassTrib e CST IBS/CBS).\n\n"
     "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS / IndOp / cClassTrib):\n"
     f"{resumo_base_texto}"
@@ -321,7 +326,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                 with pd.ExcelWriter(output, engine="openpyxl") as writer:
                     df_resposta.to_excel(writer, index=False, sheet_name="Enquadramento")
                     workbook = writer.book
-                    worksheet = writer.sheets["Enquadramento"]
+                    worksheet = workbook.active
                     
                     for coluna, largura in colunas_larguras.items():
                         worksheet.column_dimensions[coluna].width = largura
@@ -393,7 +398,7 @@ if texto_processado:
                     subitem_identificado_cache = sub_k
                     dados_tabela_estruturados.append({
                         "Item LC 116": sub_k,
-                        "CTN": sub_k,  # CTN alinhado rigorosamente à LC 116 sem ramificações fantasma
+                        "CTN": sub_k,  
                         "NBS": nbs_item["codigo"],
                         "IndOp": nbs_item["ind_op"],
                         "cClassTrib": nbs_item["c_clas"],
@@ -410,23 +415,25 @@ if texto_processado:
     if subitem_encontrado_direto and not eh_aprofundamento_nbs:
         subitem_identificado_cache = subitem_encontrado_direto
         info_sub = dicionario_lc116[subitem_encontrado_direto]
-        
-        exemplos_praticos_dinamicos = {
-            "1.1302.21.00": "Escritório de Contabilidade: Elaboração de balanços patrimoniais e apuração de tributos para empresas do Lucro Real.",
-            "1.1302.22.00": "Escrituração Mercantil: Lançamento de livros fiscais, escrituração contábil digital e conciliação de documentos.",
-            "1.1302.23.00": "Departamento Pessoal: Processamento de folha de pagamento, encargos sociais e obrigações trabalhistas."
-        }
 
         for nbs_obj in info_sub["nbs_oficiais"]:
             cod_nbs = nbs_obj["codigo"]
-            exemplo_texto = exemplos_praticos_dinamicos.get(
-                cod_nbs, 
-                f"Execução de serviços especializados para {info_sub['descricao_lc'].lower()}."
-            )
+            desc_nbs_oficial = nbs_obj["descricao"]
+            
+            # Exemplos práticos alinhados exatamente à descrição oficial da NBS da coluna D
+            if "contabilidade" in desc_nbs_oficial.lower():
+                exemplo_texto = "Escritório de Contabilidade: Elaboração de balanços patrimoniais e apuração de tributos para empresas do Lucro Real."
+            elif "escrituração" in desc_nbs_oficial.lower():
+                exemplo_texto = "BPO Financeiro: Lançamento de notas fiscais de entrada e saída e conciliação bancária de clientes."
+            elif "folha de pagamento" in desc_nbs_oficial.lower():
+                exemplo_texto = "Departamento Pessoal Terceirizado: Cálculo de salários, emissão de holerites e encargos trabalhistas (FGTS/INSS)."
+            else:
+                exemplo_texto = f"Execução de serviços especializados para {desc_nbs_oficial.lower()}."
+
             dados_tabela_estruturados.append({
                 "Subitem LC 116": subitem_encontrado_direto,
                 "Código NBS": cod_nbs,
-                "Descrição Oficial da NBS": nbs_obj["descricao"],
+                "Descrição Oficial da NBS": desc_nbs_oficial,
                 "Área de Atuação com Exemplo Prático": exemplo_texto,
             })
 
@@ -439,7 +446,7 @@ Vá direto ao ponto, **sem adicionar nenhuma frase intermediária ou explicativa
 **ATENÇÃO AO FORMATO DA TABELA:** Apresente obrigatoriamente a Tabela Markdown limpa com **exatamente 4 colunas**: 
 1. Subitem LC 116
 2. Código NBS
-3. Descrição Oficial da NBS
+3. Descrição Oficial da NBS (utilizando estritamente os valores da coluna DESCRIÇÃO NBS do excel, como 'Serviços de contabilidade', 'Serviços de escrituração mercantil', etc.)
 4. Área de Atuação com Exemplo Prático
 **É terminantemente proibido incluir as colunas IndOp ou cClassTrib nesta listagem inicial.**
 """
@@ -449,7 +456,7 @@ Vá direto ao ponto, **sem adicionar nenhuma frase intermediária ou explicativa
 O utilizador solicitou o aprofundamento no código NBS {nbs_alvo}.
 Apresente uma análise detalhada e estratégica em PRIMEIRA PESSOA DO SINGULAR sobre este NBS.
 **REGRA DE OURO PARA OS PARÂMETROS FISCAIS:** Utilize rigorosamente os dados oficiais validados da base para o código {nbs_alvo}:
-- Item LC 116 / CTN: {subitem_identificado_cache} (Sem inventar sub-códigos como 17.19.02)
+- Item LC 116 / CTN: {subitem_identificado_cache}
 - Código NBS: {nbs_alvo}
 - IndOp: {dados_tabela_estruturados[0]['IndOp'] if dados_tabela_estruturados else '100301'}
 - cClassTrib: {dados_tabela_estruturados[0]['cClassTrib'] if dados_tabela_estruturados else '000001'}
