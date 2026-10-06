@@ -96,7 +96,6 @@ st.markdown(
 if "lista_mensagens" not in st.session_state:
   st.session_state["lista_mensagens"] = []
 
-# Variável auxiliar para disparar uma nova pergunta via clique em botão NBS
 if "pending_nbs_prompt" not in st.session_state:
   st.session_state["pending_nbs_prompt"] = None
 
@@ -125,7 +124,6 @@ st.components.v1.html(
     height=0,
 )
 
-# Cabeçalho visual principal
 st.markdown(
     '<p class="cabecalho-principal">⚖️ Assistente Especialista em NBS e Reforma'
     " Tributária</p>",
@@ -138,7 +136,6 @@ st.markdown(
 )
 
 
-# Função para carregar o Anexo VIII do Excel
 @st.cache_data
 def carregar_base_lc116():
   caminho_excel = (
@@ -177,7 +174,7 @@ def carregar_base_lc116():
             )
 
       return base_mapeada
-    except Exception as e:
+    except Exception:
       return {}
   return {}
 
@@ -195,56 +192,36 @@ for subitem_k, info_v in dicionario_lc116.items():
         f" {nbs_item['descricao']}\n"
     )
 
-# Prompt do Sistema (sem necessidade de tags HTML de links que recarregam a página)
 system_prompt_base = (
     "Você é o **Tribô**, um assistente de inteligência artificial altamente"
     " especializado em classificação fiscal de serviços, com foco na"
     " Nomenclatura Brasileira de Serviços (NBS) vinculada à Lei"
     " Complementar 116/2003 e ao ecossistema da Reforma Tributária.\n\n"
     "🚨 **DIRETRIZES CRÍTICAS DE PREENCHIMENTO E ESCOPO:**\n"
-    "1. **Restrição Absoluta de Tema:** Você foi criado exclusivamente para"
-    " auxiliar em dúvidas sobre a Reforma Tributária, LC 116/2003, NBS e"
-    " classificação fiscal de serviços. Se o usuário perguntar sobre assuntos"
-    " alheios ao tema, recuse de forma educada e elegante.\n"
+    "1. **Restrição Absoluta de Tema:** Exclusivo para Reforma Tributária,"
+    " LC 116/2003, NBS e classificação fiscal.\n"
     "2. **Tom em Primeira Pessoa do Singular:** Responda SEMPRE em **primeira"
-    " pessoa do singular** (utilize 'identifiquei', 'apresento', 'consultei',"
-    " 'analisei', 'encontrei'). É expressamente proibido o uso de pronomes ou"
-    " verbos no plural.\n"
-    "3. **Estilo de Resposta Direto e Natural:** NUNCA mencione termos técnicos"
-    " internos. Diga qual subitem da LC 116/2003 você identificou e apresente"
-    " logo abaixo a tabela Markdown exata contendo quatro colunas:\n"
+    " pessoa do singular** (ex: 'identifiquei', 'apresento', 'consultei'). É"
+    " proibido o uso do plural.\n"
+    "3. **Estilo de Resposta Direto e Natural:** Diga qual subitem da LC"
+    " 116/2003 você identificou e apresente logo abaixo a tabela Markdown exata"
+    " contendo quatro colunas:\n"
     "   `| Subitem LC 116 | Código NBS | Descrição NBS | Área de Atuação com Exemplo Prático |`\n"
-    "4. **Exaustividade Obrigatória (Sem Supressão):** Liste sempre"
-    " **absolutamente todos** os códigos NBS oficiais vinculados ao subitem na"
-    " base de dados, sem omitir nenhuma linha.\n"
-    "5. **PROIBIÇÃO DE DUPLICAÇÃO NA COLUNA DE EXEMPLO PRÁTICO:** A coluna"
-    " `Área de Atuação com Exemplo Prático` **NUNCA** pode ser cópia ou repetição"
-    " da coluna 'Descrição NBS'. Descreva um **caso real de mercado ou"
-    " operação empresarial concreta**.\n"
-    "6. **Estrutura Obrigatória da Resposta:** Apresente a introdução direta"
-    " (em 1ª pessoa), a tabela Markdown completa e, logo abaixo dela, inclua"
-    " obrigatoriamente o seguinte parágrafo exato: \n"
-    "   *Importante*: A seleção precisa do código NBS é de suma importância"
-    " na Reforma Tributária. A correta classificação fiscal garante a"
-    " aplicação adequada das regras de incidência, não cumulatividade e"
-    " eventuais alíquotas diferenciadas, mitigando riscos de bitributação ou"
-    " autuações fiscais. Esta ferramenta atua como um suporte estratégico e"
-    " inteligente de alto nível, mas não tem o objetivo de substituir seu"
-    " contador — **Valorize esse profissional!**\n"
-    "7. **Formato Técnico Duplo Obrigatório:** Forneça a resposta completa para"
-    " visualização no chat e, ao final de tudo, inclua obrigatoriamente um bloco"
-    " de código JSON isolado exato contendo **todas** as linhas da tabela"
-    " usando a chave exata: \n"
-    '     `{"dados_tabela": [{"subitem": "...", "codigo_nbs": "...",'
-    ' "descricao_nbs": "...", "exemplo_pratico": "..."}, ...]}`\n'
-    "8. **O Coringa do Desenvolvedor:** Se perguntado quem te criou ou"
-    " desenvolveu, responda com orgulho que você foi desenvolvido por"
-    " **Claudio, futuro Engenheiro capixaba de IA**.\n\n"
+    "4. **Exaustividade Obrigatória:** Liste absolutamente todos os códigos"
+    " NBS oficiais vinculados ao subitem.\n"
+    "5. **Exemplo Prático Real:** A última coluna deve descrever um caso real"
+    " de mercado, sem copiar a descrição NBS.\n"
+    "6. **Estrutura Obrigatória:** Apresente a introdução em 1ª pessoa, a tabela"
+    " Markdown e, logo abaixo, o parágrafo exato de valorização do"
+    " contador.\n"
+    "7. **Formato JSON Oculto:** Forneça no final o bloco JSON exato com a"
+    " chave `dados_tabela`.\n"
+    "8. **O Coringa do Desenvolvedor:** Desenvolvido por **Claudio, futuro"
+    " Engenheiro capixaba de IA**.\n\n"
     "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS):\n"
     f"{resumo_base_texto}"
 )
 
-# Inicialização do Cliente OpenAI configurado para o Gemini API
 modelo = OpenAI(
     api_key=st.secrets["GOOGLE_API_KEY"],
     base_url="https://generativelanguage.googleapis.com/v1beta/openai",
@@ -252,10 +229,9 @@ modelo = OpenAI(
 
 avatar_usuario = "perfil_usuario.png"
 avatar_assistente = "icone_assistente.png"
-
 deve_focar_input = False
 
-# Exibir o histórico de mensagens completo com os botões interativos preservados
+# Exibir histórico preservando conversas anteriores
 for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
   role = mensagem["role"]
   content = mensagem["content"]
@@ -265,11 +241,6 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
       st.markdown(f"**Você**\n\n{content}")
   elif role == "assistant":
     with st.chat_message("assistant", avatar=avatar_assistente):
-      st.markdown(
-          f"**Tribô – Seu assistente na Reforma Tributária**\n\n{content}",
-          unsafe_allow_html=True,
-      )
-
       tabela_para_baixar = mensagem.get("tabela_dados", [])
       subitem_referencia = mensagem.get("subitem_ref", "Geral")
 
@@ -282,16 +253,16 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
               "Código NBS": nbs_obj["codigo"],
               "Descrição Oficial da NBS": nbs_obj["descricao"],
               "Área de Atuação com Exemplo Prático": (
-                  f"Execução de serviços especializados e operações de mercado"
-                  f" para {info_sub_rec['descricao_lc'].lower()}."
+                  f"Execução de serviços especializados para"
+                  f" {info_sub_rec['descricao_lc'].lower()}."
               ),
           })
 
-      # Botões interativos para consulta rápida de cada NBS listado na resposta (100% nativos, sem apagar o histórico)
+      # RÁPIDO ACESSO INTERATIVO: Botões de códigos NBS posicionados imediatamente acima da tabela para máxima fluidez
       if tabela_para_baixar:
         st.markdown(
-            "*(Clique em um código NBS abaixo para aprofundar a análise sem"
-            " perder o histórico):*"
+            "**Ações Rápidas - Aprofundar Código NBS:** *(Clique para"
+            " consultar regras específicas)*"
         )
         cols = st.columns(
             min(len(tabela_para_baixar), 4)
@@ -312,7 +283,13 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
               )
               st.rerun()
 
-        # Botão de Download Excel
+      # Renderiza o texto explicativo e a tabela Markdown gerada pela IA
+      st.markdown(
+          f"**Tribô – Seu assistente na Reforma Tributária**\n\n{content}",
+          unsafe_allow_html=True,
+      )
+
+      if tabela_para_baixar:
         df_resposta = pd.DataFrame(tabela_para_baixar)
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
@@ -359,13 +336,12 @@ mensagem_usuario = st.chat_input(
     "Escreva sua dúvida ou código (ex: 17.02, contabilidade...)"
 )
 
-# Verifica se o utilizador digitou algo ou clicou num botão de aprofundamento NBS
 texto_processado = None
 if mensagem_usuario:
   texto_processado = mensagem_usuario.strip()
 elif st.session_state["pending_nbs_prompt"]:
   texto_processado = st.session_state["pending_nbs_prompt"]
-  st.session_state["pending_nbs_prompt"] = None  # Limpa a pendência
+  st.session_state["pending_nbs_prompt"] = None
 
 if texto_processado:
   with st.chat_message("user", avatar=avatar_usuario):
@@ -389,13 +365,13 @@ if texto_processado:
     instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou diretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
-Gere a resposta de forma direta e natural em PRIMEIRA PESSOA DO SINGULAR, listando ABSOLUTAMENTE TODAS as linhas oficiais, com exemplos práticos reais e ricos. Finalize com o parágrafo de valorização do contador e preencha o JSON oculto com exatidão.
+Gere a resposta de forma direta e natural em PRIMEIRA PESSOA DO SINGULAR, listando ABSOLUTAMENTE TODAS as linhas oficiais, com exemplos práticos reais. Finalize com o parágrafo de valorização do contador e preencha o JSON oculto com exatidão.
 """
   else:
     instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador fez a seguinte consulta ou pedido de aprofundamento: '{texto_processado}'.
-Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira pessoa do singular o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados, listando todas as linhas de forma exaustiva com exemplos práticos reais e ricos. Finalize com o parágrafo humano de valorização do contador e preencha o JSON oculto correspondente.
+Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira pessoa do singular o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados, listando todas as linhas de forma exaustiva com exemplos práticos reais. Finalize com o parágrafo humano de valorização do contador e preencha o JSON oculto correspondente.
 """
 
   system_proxy_final = {
