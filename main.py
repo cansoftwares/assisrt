@@ -433,7 +433,7 @@ Apresente obrigatoriamente a Tabela Markdown limpa com **exatamente 4 colunas**:
 1. Subitem LC 116
 2. Código NBS
 3. Descrição Oficial da NBS (utilizando estritamente as descrições oficiais da coluna D da base de dados)
-4. Área de Atuação com Exemplo Prático
+4. Área de Atuação com Exemplo Prático (fornecendo exemplos ricos, profissionais e detalhados correspondentes a cada NBS)
 **No final da resposta, inclua obrigatoriamente um bloco de código JSON isolado** com a chave `dados_tabela` contendo uma lista com os objetos exatos correspondentes às linhas da tabela gerada (chaves: `subitem_lc_116`, `codigo_nbs`, `descricao_nbs`, `exemplo_pratico`), para que o Excel baixe exatamente o conteúdo exibido na tela.
 **É terminantemente proibido incluir as colunas IndOp ou cClassTrib nesta listagem inicial.**
 """
@@ -506,7 +506,7 @@ Responda em PRIMEIRA PESSOA DO SINGULAR com foco estrito em LC 116 e Reforma Tri
                             "Subitem LC 116": sub_val,
                             "Código NBS": item.get("codigo_nbs", item.get("nbs", "")),
                             "Descrição Oficial da NBS": item.get("descricao_nbs", item.get("descricao", "")),
-                            "Área de Atuação com Exemplo Prático": item.get("exemplo_pratico", item.get(" area_de_atuacao_com_exemplo_pratico ", "")),
+                            "Área de Atuação com Exemplo Prático": item.get("exemplo_pratico", item.get("area_de_atuacao_com_exemplo_pratico", "")),
                         })
         except Exception:
             pass
