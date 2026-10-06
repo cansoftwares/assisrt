@@ -150,8 +150,11 @@ def carregar_base_lc116():
             col_desc_nbs = next((c for c in df.columns if "descrição" in c.lower() and ("mbs" in c.lower() or "hbs" in c.lower())), df.columns[3] if len(df.columns) > 3 else df.columns[2])
 
             col_ind_op = next((c for c in df.columns if "indop" in c.lower()), df.columns[6] if len(df.columns) > 6 else "")
-            col_c_clas = next((c for c in df.columns if "cclasstrib" in c.lower() or "cclas" in c.lower()), df.columns[8] if len(df.columns) > 8 else "")
             col_local_ibs = next((c for c in df.columns if "local" in c.lower() or "incidência" in c.lower()), df.columns[7] if len(df.columns) > 7 else "")
+            col_c_clas = next((c for c in df.columns if "cclasstrib" in c.lower() or "cclas" in c.lower()), df.columns[8] if len(df.columns) > 8 else "")
+            
+            # Captura da coluna com a descrição do cClassTrib (geralmente logo após o cClassTrib)
+            col_nome_c_clas = df.columns[9] if len(df.columns) > 9 else ""
 
             df[coluna_subitem_lc] = df[coluna_subitem_lc].ffill()
             df[coluna_desc_lc] = df[coluna_desc_lc].ffill()
@@ -160,6 +163,8 @@ def carregar_base_lc116():
                 df[col_desc_nbs] = df[col_desc_nbs].ffill()
             if col_c_clas and col_c_clas in df.columns:
                 df[col_c_clas] = df[col_c_clas].ffill()
+            if col_nome_c_clas and col_nome_c_clas in df.columns:
+                df[col_nome_c_clas] = df[col_nome_c_clas].ffill()
             if col_local_ibs and col_local_ibs in df.columns:
                 df[col_local_ibs] = df[col_local_ibs].ffill()
 
@@ -174,8 +179,10 @@ def carregar_base_lc116():
                 desc_nbs = str(row[col_desc_nbs]).strip() if col_desc_nbs in df.columns and pd.notna(row[col_desc_nbs]) else ""
                 
                 ind_op = str(row[col_ind_op]).strip() if col_ind_op and col_ind_op in df.columns and pd.notna(row[col_ind_op]) else "100301"
-                c_clas = str(row[col_c_clas]).strip() if col_c_clas and col_c_clas in df.columns and pd.notna(row[col_c_clas]) else "000001"
                 local_desc = str(row[col_local_ibs]).strip() if col_local_ibs and col_local_ibs in df.columns and pd.notna(row[col_local_ibs]) else "Domicílio principal do adquirente"
+                
+                c_clas = str(row[col_c_clas]).strip() if col_c_clas and col_c_clas in df.columns and pd.notna(row[col_c_clas]) else "000001"
+                nome_c_clas = str(row[col_nome_c_clas]).strip() if col_nome_c_clas and col_nome_c_clas in df.columns and pd.notna(row[col_nome_c_clas]) else "Situação tributada integralmente pelo IBS e CBS."
 
                 if subitem and subitem != "nan":
                     if subitem not in base_mapeada:
@@ -188,12 +195,12 @@ def carregar_base_lc116():
                         if cod_nbs not in base_mapeada[subitem]["nbs_oficiais"]:
                             base_mapeada[subitem]["nbs_oficiais"][cod_nbs] = {
                                 "descricao": desc_nbs if desc_nbs and desc_nbs != "nan" else "Serviço associado",
-                                "ind_ops": [],
+                                "ind_ops_detalhes": {},
                                 "c_clas": c_clas if c_clas != "nan" else "000001",
-                                "local_desc": local_desc
+                                "nome_c_clas": nome_c_clas if nome_c_clas and nome_c_clas != "nan" else "Situação tributada integralmente pelo IBS e CBS."
                             }
-                        if ind_op and ind_op != "nan" and ind_op not in base_mapeada[subitem]["nbs_oficiais"][cod_nbs]["ind_ops"]:
-                            base_mapeada[subitem]["nbs_oficiais"][cod_nbs]["ind_ops"].append(ind_op)
+                        if ind_op and ind_op != "nan":
+                            base_mapeada[subitem]["nbs_oficiais"][cod_nbs]["ind_ops_detalhes"][ind_op] = local_desc
 
             return base_mapeada
         except Exception as e:
@@ -210,10 +217,10 @@ for subitem_k, info_v in dicionario_lc116.items():
         f"Subitem LC 116: {subitem_k} - Descrição do Item: {info_v['descricao_lc']}\n"
     )
     for nbs_k, nbs_v in info_v["nbs_oficiais"].items():
-        ind_ops_str = ", ".join(nbs_v["ind_ops"])
+        ind_ops_resumo = ", ".join([f"{k} ({v})" for k, v in nbs_v["ind_ops_detalhes"].items()])
         resumo_base_texto += (
             f"    -> NBS: {nbs_k} | Descrição Oficial NBS: {nbs_v['descricao']} | "
-            f"IndOp(s): {ind_ops_str} ({nbs_v['local_desc']}) | cClassTrib: {nbs_v['c_clas']}\n"
+            f"IndOps: [{ind_ops_resumo}] | cClassTrib: {nbs_v['c_clas']} - {nbs_v['nome_c_clas']}\n"
         )
 
 system_prompt_base = (
@@ -227,9 +234,9 @@ system_prompt_base = (
     "2. **Tom em Primeira Pessoa do Singular:** Responda SEMPRE em **primeira"
     " pessoa do singular** (ex: 'analisei', 'identifiquei', 'apresento', 'consultei'). É"
     " estritamente proibido o uso do plural.\n"
-    "3. **Estilo Direto e Simpático no Aprofundamento:** Quando o usuário clicar para se aprofundar em um NBS, inicie com simpatia e acolhimento (ex: 'Claro! Analisei com atenção o código...').\n"
-    "4. **Agrupamento de IndOps:** Se houver múltiplos códigos IndOp para o mesmo NBS, liste todos agrupados e separados por vírgula na mesma célula (ex: '050101, 050102, 050103').\n"
-    "5. **Formato JSON Obrigatório para Espelhamento Exato no Excel:** Inclua sempre um bloco de código JSON isolado contendo a chave `dados_tabela` para que o Excel baixe exatamente o conteúdo da tela.\n\n"
+    "3. **Estilo Direto e Simpático no Aprofundamento:** Inicie com simpatia e acolhimento (ex: 'Claro! Analisei com atenção o código...').\n"
+    "4. **Agrupamento de IndOps:** Liste todos os códigos IndOp separados por vírgula na célula da tabela (ex: '050101, 050102, 050103'). Na legenda, detalhe cada IndOp individualmente com sua respectiva descrição oficial.\n"
+    "5. **Formato JSON Obrigatório para Espelhamento Exato no Excel:** Inclua sempre um bloco de código JSON isolado contendo a chave `dados_tabela`.\n\n"
     "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS / IndOp / cClassTrib):\n"
     f"{resumo_base_texto}"
 )
@@ -278,6 +285,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                     
                     for j, row_data in enumerate(lote_atual):
                         cod_nbs_atual = row_data.get("Código NBS", row_data.get("NBS", ""))
+                        subitem_atual_btn = row_data.get("Subitem LC 116", subitem_referencia)
                         with cols[j]:
                             if st.button(
                                 f"🔍 {cod_nbs_atual}",
@@ -285,7 +293,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                                 use_container_width=True,
                             ):
                                 st.session_state["pending_nbs_prompt"] = (
-                                    f"Por favor, me detalhe o código NBS {cod_nbs_atual} e me informe quais códigos fiscais corretos (IndOp, cClassTrib e CST) devem ser preenchidos conforme a tabela oficial da Reforma Tributária."
+                                    f"Por favor, me detalhe o código NBS {cod_nbs_atual} do subitem {subitem_atual_btn} e me informe quais códigos fiscais corretos (IndOp, cClassTrib e CST) devem ser preenchidos conforme a tabela oficial da Reforma Tributária."
                                 )
                                 st.rerun()
 
@@ -389,44 +397,54 @@ if texto_processado:
     subitem_identificado_cache = "Geral"
     eh_aprofundamento_nbs = False
 
-    match_nbs_clicado = re.search(r"código NBS\s*([\d\.]+)", texto_processado, re.IGNORECASE)
+    match_nbs_clicado = re.search(r"código NBS\s*([\d\.]+)(?:\s+do\s+subitem\s+([\d\.]+))?", texto_processado, re.IGNORECASE)
     if match_nbs_clicado:
         eh_aprofundamento_nbs = True
         nbs_alvo = match_nbs_clicado.group(1)
+        subitem_informado = match_nbs_clicado.group(2) if match_nbs_clicado.lastindex >= 2 else None
         
+        # Identificação rigorosa cruzando o Subitem correto e o NBS
+        subitem_encontrado_exato = None
         for sub_k, info_v in dicionario_lc116.items():
             if nbs_alvo in info_v["nbs_oficiais"]:
-                subitem_identificado_cache = sub_k
-                nbs_obj = info_v["nbs_oficiais"][nbs_alvo]
-                c_clas_val = nbs_obj["c_clas"]
-                ind_ops_str = ", ".join(nbs_obj["ind_ops"])
-                
-                if "reparação" in nbs_obj["descricao"].lower() or "manutenção" in nbs_obj["descricao"].lower():
-                    exemplo_multiplo = (
-                        "1. Assistência Técnica Especializada: Restauração de mecanismos de relógios de alta precisão e joias finas para clientes particulares.\n"
-                        "2. Manutenção Preventiva: Limpeza, polimento e troca de peças desgastadas em relógios e adornos em estabelecimento comercial.\n"
-                        "3. Reparo de Joias: Soldagem, ajuste de tamanho de anéis e cravação de pedras preciosas sob demanda."
-                    )
-                else:
-                    exemplo_multiplo = (
-                        f"1. Prestação Principal: Execução de serviços referentes a {nbs_obj['descricao'].lower()} para atendimento a clientes corporativos.\n"
-                        f"2. Operação Especializada: Atividades técnicas correlatas a {nbs_obj['descricao'].lower()} com emissão de laudo.\n"
-                        f"3. Suporte Contínuo: Acompanhamento e suporte operacional especializado em {nbs_obj['descricao'].lower()}."
-                    )
-                
-                desc_nbs_oficial_base = nbs_obj["descricao"]
-                local_desc_base = nbs_obj["local_desc"]
+                if subitem_informado and subitem_informado == sub_k:
+                    subitem_encontrado_exato = sub_k
+                    break
+                elif not subitem_encontrado_exato:
+                    subitem_encontrado_exato = sub_k
 
-                dados_tabela_estruturados.append({
-                    "Subitem LC 116": sub_k,
-                    "CTN": "",
-                    "Código NBS": nbs_alvo,
-                    "IndOp": ind_ops_str,
-                    "cClassTrib": c_clas_val,
-                    "CST IBS/CBS": "",
-                    "Exemplo Prático": exemplo_multiplo,
-                })
-                break
+        if subitem_encontrado_exato:
+            subitem_identificado_cache = subitem_encontrado_exato
+            nbs_obj = dicionario_lc116[subitem_encontrado_exato]["nbs_oficiais"][nbs_alvo]
+            c_clas_val = nbs_obj["c_clas"]
+            nome_c_clas_val = nbs_obj["nome_c_clas"]
+            ind_ops_dict = nbs_obj["ind_ops_detalhes"]
+            ind_ops_str = ", ".join(ind_ops_dict.keys())
+            
+            if "reparação" in nbs_obj["descricao"].lower() or "manutenção" in nbs_obj["descricao"].lower():
+                exemplo_multiplo = (
+                    "1. Assistência Técnica Especializada: Restauração de mecanismos de relógios de alta precisão e joias finas para clientes particulares.\n"
+                    "2. Manutenção Preventiva: Limpeza, polimento e troca de peças desgastadas em relógios e adornos em estabelecimento comercial.\n"
+                    "3. Reparo de Joias: Soldagem, ajuste de tamanho de anéis e cravação de pedras preciosas sob demanda."
+                )
+            else:
+                exemplo_multiplo = (
+                    f"1. Prestação Principal: Execução de serviços referentes a {nbs_obj['descricao'].lower()} para atendimento a clientes corporativos.\n"
+                    f"2. Operação Especializada: Atividades técnicas correlatas a {nbs_obj['descricao'].lower()} com emissão de laudo.\n"
+                    f"3. Suporte Contínuo: Acompanhamento e suporte operacional especializado em {nbs_obj['descricao'].lower()}."
+                )
+            
+            desc_nbs_oficial_base = nbs_obj["descricao"]
+
+            dados_tabela_estruturados.append({
+                "Subitem LC 116": subitem_encontrado_exato,
+                "CTN": "",
+                "Código NBS": nbs_alvo,
+                "IndOp": ind_ops_str,
+                "cClassTrib": c_clas_val,
+                "CST IBS/CBS": "",
+                "Exemplo Prático": exemplo_multiplo,
+            })
 
     subitem_encontrado_direto = None
     if not eh_aprofundamento_nbs:
@@ -477,12 +495,16 @@ No final da resposta, inclua obrigatoriamente um bloco de código JSON isolado c
         ind_op_oficial = dados_tabela_estruturados[0]['IndOp'] if dados_tabela_estruturados else '100301'
         desc_lc_val = dicionario_lc116[subitem_identificado_cache]['descricao_lc'] if subitem_identificado_cache in dicionario_lc116 else 'Serviços'
         desc_nbs_oficial_val = desc_nbs_oficial_base if 'desc_nbs_oficial_base' in locals() else 'Serviço associado'
-        local_desc_val = local_desc_base if 'local_desc_base' in locals() else 'Domicílio principal do adquirente'
+        nome_c_clas_val = nome_c_clas_val if 'nome_c_clas_val' in locals() else 'Situação tributada integralmente pelo IBS e CBS.'
+        ind_ops_dict_val = ind_ops_dict if 'ind_ops_dict' in locals() else {'100301': 'Domicílio principal do adquirente'}
         exemplo_val = dados_tabela_estruturados[0]['Exemplo Prático'] if dados_tabela_estruturados else ''
+
+        # Montagem estruturada dos IndOps para a legenda
+        legenda_indop_linhas = "\n  - ".join([f"**{k}:** {v}" for k, v in ind_ops_dict_val.items()])
 
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
-O utilizador solicitou o aprofundamento no código NBS {nbs_alvo}.
+O utilizador solicitou o aprofundamento no código NBS {nbs_alvo} vinculado ao subitem {subitem_identificado_cache}.
 Inicie com uma abordagem simpática e acolhedora em primeira pessoa, por exemplo: "Claro! Analisei com atenção o código NBS {nbs_alvo}, cuja descrição oficial na base é "{desc_nbs_oficial_val}", vinculado ao subitem {subitem_identificado_cache} da Lei Complementar nº 116/2003 ({desc_lc_val})."
 
 **REGRA DE OURO DE LAYOUT:** 
@@ -493,17 +515,18 @@ Inicie com uma abordagem simpática e acolhedora em primeira pessoa, por exemplo
   - CTN: (deixar em branco)
   - Código NBS: {nbs_alvo}
   - IndOp: {ind_op_oficial}
-  - cClassTrib: {c_clas_val}
+  - cClassTrib: {c_clas_oficial}
   - CST IBS/CBS: (deixar em branco)
   - Exemplo Prático: {json.dumps(exemplo_val, ensure_ascii=False)}
 
-- Abaixo da tabela, inclua obrigatoriamente a **LEGENDA** traduzindo o significado explicativo dos códigos selecionados:
+- Abaixo da tabela, inclua obrigatoriamente a **LEGENDA** detalhando individualmente cada código IndOp e o significado real do cClassTrib extraído da base:
   **LEGENDA:**
   - **Subitem LC:** {desc_lc_val}
   - **CTN:** 
   - **NBS:** {desc_nbs_oficial_val}
-  - **IndOp:** ({ind_op_oficial}) {local_desc_val}
-  - **cClassTrib:** ({c_clas_val}) Prestação de serviços de profissões intelectuais, técnicas e reparação.
+  - **IndOp:** 
+    - {legenda_indop_linhas}
+  - **cClassTrib:** ({c_clas_oficial}) {nome_c_clas_val}
   - **CST IBS/CBS:** 
 
 **OBRIGATÓRIO - BLOCO JSON DE ESPELHAMENTO PARA O EXCEL:**
