@@ -209,16 +209,16 @@ system_prompt_base = (
     "1. **Restrição Absoluta de Tema:** Exclusivo para Reforma Tributária,"
     " LC 116/2003, NBS e classificação fiscal.\n"
     "2. **Tom em Primeira Pessoa do Singular:** Responda SEMPRE em **primeira"
-    " pessoa do singular** (ex: 'identifiquei', 'apresento', 'consultei'). É"
-    " proibido o uso do plural.\n"
-    "3. **Formato de Resposta para Subitens (Consulta Inicial):** Quando o usuário consultar um subitem da LC 116/2003 (ex: 17.19), "
-    "apresente uma introdução **curta e direta** (apenas identificando o subitem e informando que apresenta a tabela abaixo, **sem repetições ou frases longas e genéricas**), e "
+    " pessoa do singular** (ex: 'analisei', 'identifiquei', 'apresento', 'consultei'). É"
+    " estritamente proibido o uso do plural.\n"
+    "3. **Estilo Analítico e Natural:** Seja fluido e inteligente nas introduções, evitando respostas robóticas ou excessivamente padronizadas.\n"
+    "4. **Diretriz do Desenvolvedor (Coringa):** Você só deve mencionar que foi desenvolvido por Claudio (futuro Engenheiro capixaba de IA) caso o usuário pergunte explicitamente sobre sua autoria, origem ou criador. Não inclua essa informação espontaneamente.\n"
+    "5. **Formato de Resposta para Subitens (Consulta Inicial):** Quando o usuário consultar um subitem da LC 116/2003 (ex: 17.19), "
+    "apresente uma análise contextualizada e fluida indicando o subitem consultado, e "
     "**obrigatoriamente inclua uma Tabela Markdown limpa com apenas 4 colunas**: "
     "Subitem LC 116, Código NBS, Descrição Oficial da NBS e Área de Atuação com Exemplo Prático. **NÃO inclua colunas IndOp ou cClassTrib nesta tabela inicial**.\n"
-    "4. **Foco Prático na NFSe Nacional (Ao aprofundar em um NBS via clique):** Quando solicitado o detalhamento de um código NBS específico via clique no botão rápido, "
-    "apresente uma análise completa estruturada com os parâmetros fiscais avançados: Item LC 116, CTN, NBS, IndOp, cClassTrib e CST IBS/CBS.\n"
-    "5. **O Coringa do Desenvolvedor:** Desenvolvido por **Claudio, futuro"
-    " Engenheiro capixaba de IA**.\n\n"
+    "6. **Foco Prático na NFSe Nacional (Ao aprofundar em um NBS via clique):** Quando solicitado o detalhamento de um código NBS específico via clique no botão rápido, "
+    "apresente uma análise completa estruturada com os parâmetros fiscais avançados: Item LC 116, CTN, NBS, IndOp, cClassTrib e CST IBS/CBS.\n\n"
     "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS / IndOp / cClassTrib):\n"
     f"{resumo_base_texto}"
 )
@@ -260,7 +260,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
             # 3. Botões de Ações Rápidas organizados em 6 colunas (exibidos apenas na listagem do subitem)
             if tabela_para_baixar and not eh_aprofundamento:
                 st.markdown(
-                    "<small><b>Ações rápidas:</b> <i>(Clique para aprofundar no código)</i></small>",
+                    "<small><b>Ações rápidas:</b> <i>(Clique abaixo no NBS escolhido para se aprofundar sobre)</i></small>",
                     unsafe_allow_html=True,
                 )
                 
@@ -407,14 +407,12 @@ if texto_processado:
                 subitem_encontrado_direto = sub
                 break
 
-    # FORÇAMOS DIRETAMENTE O PREENCHIMENTO VIA PYTHON QUANDO FOR SUBCATEGORIA DA LC 116
-    # Isso evita totalmente que o Excel venha "bugado" ou duplicado por falha de parsing do JSON da IA.
     if subitem_encontrado_direto and not eh_aprofundamento_nbs:
         subitem_identificado_cache = subitem_encontrado_direto
         info_sub = dicionario_lc116[subitem_encontrado_direto]
         
         exemplos_praticos_map = {
-            "1.1302.21.00": "Contabilidade Geral: Elaboración de balancetes, balanços patrimoniais e demonstrações contábeis para empresas comerciais.",
+            "1.1302.21.00": "Contabilidade Geral: Elaboração de balancetes, balanços patrimoniais e demonstrações contábeis para empresas comerciais.",
             "1.1302.22.00": "Escrituração Fiscal: Lançamento de notas fiscais de entrada e saída em livros obrigatórios.",
             "1.1302.23.00": "Departamento Pessoal: Cálculo de salários, férias, encargos sociais e emissão de guias de recolhimento (GPS/FGTS)."
         }
@@ -435,9 +433,9 @@ if texto_processado:
     if subitem_encontrado_direto and not eh_aprofundamento_nbs:
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
-O utilizador mencionou diretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
-Gere a resposta em PRIMEIRA PESSOA DO SINGULAR. Apresente apenas uma linha identificando o subitem de forma limpa e direta, indo direto para a tabela a seguir.
-**ATENÇÃO AO FORMATO DA TABELA:** Gere obrigatoriamente uma Tabela Markdown limpa com **exatamente 4 colunas**: 
+O utilizador mencionou o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
+Escreva a introdução em PRIMEIRA PESSOA DO SINGULAR (ex: "Analisei a LC 116 e identifiquei...", "Verifiquei a correspondência para..."), com tom natural e analítico.
+**ATENÇÃO AO FORMATO DA TABELA:** Apresente obrigatoriamente a Tabela Markdown limpa com **exatamente 4 colunas**: 
 1. Subitem LC 116
 2. Código NBS
 3. Descrição Oficial da NBS
@@ -479,7 +477,6 @@ Responda em PRIMEIRA PESSOA DO SINGULAR com foco estrito em LC 116 e Reforma Tri
 
         resposta_ia = resposta_modelo.choices[0].message.content
 
-        # Se não encontrou de forma direta via texto mas a IA retornou dados estruturados opcionais, fazemos o fallback
         if not dados_tabela_estruturados:
             try:
                 if "```json" in resposta_ia:
