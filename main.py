@@ -12,7 +12,7 @@ st.set_page_config(
     page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️"
 )
 
-# Estilo CSS otimizado para o layout corporativo e botões compactos lado a lado
+# Estilo CSS otimizado para o layout corporativo
 st.markdown(
     """
 <style>
@@ -66,34 +66,6 @@ st.markdown(
         margin-left: 0px !important;
         margin-right: auto !important;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-    }
-
-    /* FORÇA OS BOTÕES A FICAREM LADO A LADO EM FORMATO DE GRID COMPACTO */
-    .acoes-rapidas-wrapper {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px 8px;
-        align-items: center;
-        margin-top: 8px;
-        margin-bottom: 12px;
-    }
-
-    /* Anula o comportamento de bloco inteiro que o Streamlit impõe nas divs dos botões */
-    .acoes-rapidas-wrapper div[data-testid="stHorizontalBlock"], 
-    .acoes-rapidas-wrapper div.stButton,
-    .acoes-rapidas-wrapper > div {
-        display: inline-block !important;
-        width: auto !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-
-    /* Ajusta o botão em si para ficar limpo e compacto */
-    .acoes-rapidas-wrapper button {
-        height: auto !important;
-        padding: 4px 10px !important;
-        font-size: 0.85rem !important;
-        border-radius: 6px !important;
     }
 
     table {
@@ -290,27 +262,33 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                 "*Importante: Escolha com precisão o NBS, a correta classificação garante a aplicação adequada das regras, mitigando riscos de bitributação ou autuações fiscais.*"
             )
 
-            # 3. Botões de Ações Rápidas compactos dispostos lado a lado com quebra responsiva limpa
+            # 3. Botões de Ações Rápidas organizados em linhas estruturadas de 4 colunas (com texto visível e compacto)
             if tabela_para_baixar:
                 st.markdown(
                     "<small><b>Ações rápidas:</b> <i>(Clique para aprofundar no código)</i></small>",
                     unsafe_allow_html=True,
                 )
                 
-                st.markdown('<div class="acoes-rapidas-wrapper">', unsafe_allow_html=True)
-                for i, row_data in enumerate(tabela_para_baixar):
-                    cod_nbs_atual = row_data.get("Código NBS", "")
-                    if st.button(
-                        f"🔍 {cod_nbs_atual}",
-                        key=f"btn_nbs_{idx}_{i}_{cod_nbs_atual}",
-                    ):
-                        st.session_state["pending_nbs_prompt"] = (
-                            f"Por favor, traga mais detalhes estratégicos, regras de"
-                            f" tributação e enquadramento avançado para o código NBS"
-                            f" {cod_nbs_atual}."
-                        )
-                        st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
+                # Agrupa os botões em blocos de 4 por linha para otimizar espaço de forma limpa e visível
+                itens_por_linha = 4
+                for i in range(0, len(tabela_para_baixar), itens_por_linha):
+                    lote_atual = tabela_para_baixar[i : i + itens_por_linha]
+                    cols = st.columns(itens_por_linha)
+                    
+                    for j, row_data in enumerate(lote_atual):
+                        cod_nbs_atual = row_data.get("Código NBS", "")
+                        with cols[j]:
+                            if st.button(
+                                f"🔍 {cod_nbs_atual}",
+                                key=f"btn_nbs_{idx}_{i+j}_{cod_nbs_atual}",
+                                use_container_width=True,
+                            ):
+                                st.session_state["pending_nbs_prompt"] = (
+                                    f"Por favor, traga mais detalhes estratégicos, regras de"
+                                    f" tributação e enquadramento avançado para o código NBS"
+                                    f" {cod_nbs_atual}."
+                                )
+                                st.rerun()
 
             # 4. Rodapé de valorização do profissional contábil
             st.markdown(
@@ -458,6 +436,7 @@ Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira
         elif subitem_encontrado_direto:
             subitem_identificado_cache = subitem_encontrado_direto
 
+5. # Correção e Fallback de Exibição
         if "```json" in resposta_ia:
             resposta_ia_exibicao = resposta_ia.split("```json")[0].strip()
         else:
