@@ -288,15 +288,35 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                 unsafe_allow_html=True,
             )
 
-            # 5. Botão de Download do Excel isolado por último
+            # 5. Botão de Download do Excel isolado por último (Garantindo rigorosamente as 6 colunas na ordem correta)
             if tabela_para_baixar:
                 df_resposta = pd.DataFrame(tabela_para_baixar)
+                
+                # Assegurar a ordem exata das 6 colunas para o Excel corporativo
+                colunas_desejadas = [
+                    "Subitem LC 116", 
+                    "Código NBS", 
+                    "Descrição Oficial da NBS", 
+                    "IndOp", 
+                    "cClassTrib", 
+                    "Área de Atuação com Exemplo Prático"
+                ]
+                
+                # Preencher colunas ausentes caso seja visualização de aprofundamento
+                for col in colunas_desejadas:
+                    if col not in df_resposta.columns:
+                        df_resposta[col] = ""
+                
+                df_resposta = df_resposta[colunas_desejadas]
+
                 output = io.BytesIO()
                 with pd.ExcelWriter(output, engine="openpyxl") as writer:
                     df_resposta.to_excel(writer, index=False, sheet_name="Enquadramento")
                     workbook = writer.book
                     worksheet = writer.sheets["Enquadramento"]
-                    colunas_larguras = {"A": 14, "B": 12, "C": 35, "D": 12, "E": 18, "F": 50}
+                    
+                    # Larguras ajustadas para as 6 colunas perfeitamente alinhadas
+                    colunas_larguras = {"A": 14, "B": 14, "C": 35, "D": 10, "E": 14, "F": 50}
                     for coluna, largura in colunas_larguras.items():
                         worksheet.column_dimensions[coluna].width = largura
 
@@ -366,12 +386,12 @@ if texto_processado:
                 if nbs_item["codigo"] == nbs_alvo:
                     subitem_identificado_cache = sub_k
                     dados_tabela_estruturados.append({
-                        "Item LC 116": sub_k,
-                        "CTN": sub_k,
-                        "NBS": nbs_item["codigo"],
+                        "Subitem LC 116": sub_k,
+                        "Código NBS": nbs_item["codigo"],
+                        "Descrição Oficial da NBS": nbs_item["descricao"],
                         "IndOp": nbs_item["ind_op"],
                         "cClassTrib": nbs_item["c_clas"],
-                        "CST IBS/CBS": "Consultar Portal SVRS",
+                        "Área de Atuação com Exemplo Prático": f"Detalhamento oficial para o código NBS {nbs_alvo}.",
                     })
 
     subitem_encontrado_direto = None
@@ -399,14 +419,21 @@ if texto_processado:
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou diretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
-Gere a resposta em PRIMEIRA PESSOA DO SINGULAR, apresentando a análise descritiva e **gerando obrigatoriamente uma Tabela Markdown completa com 6 colunas** (Subitem LC 116, Código NBS, Descrição Oficial da NBS, IndOp, cClassTrib e Área de Atuação com Exemplo Prático) contendo todas as correspondências oficiais daquele subitem. No final, forneça o bloco JSON oculto correspondente.
+Gere a resposta em PRIMEIRA PESSOA DO SINGULAR, apresentando a análise descritiva e **gerando obrigatoriamente uma Tabela Markdown completa com 6 colunas**: 
+1. Subitem LC 116
+2. Código NBS
+3. Descrição Oficial da NBS
+4. IndOp
+5. cClassTrib
+6. Área de Atuação com Exemplo Prático
+Preencha rigorosamente com todas as correspondências oficiais daquele subitem. No final, forneça o bloco JSON oculto correspondente.
 """
     elif eh_aprofundamento_nbs:
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador clicou no acesso rápido para aprofundar no código NBS {nbs_alvo}.
 Apresente uma análise detalhada e estratégica em PRIMEIRA PESSOA DO SINGULAR sobre este NBS, explicando os parâmetros e a aplicação prática para a Reforma Tributária. 
-Forneça uma nova tabela Markdown específica contendo os campos essenciais para o preenchimento da NFSe Nacional: Item LC 116, CTN, NBS, IndOp, cClassTrib e CST IBS/CBS.
+Forneça a tabela Markdown contendo exatamente as 6 colunas oficiais: Subitem LC 116, Código NBS, Descrição Oficial da NBS, IndOp, cClassTrib e Área de Atuação com Exemplo Prático.
 No final, inclua o JSON oculto correspondente.
 """
     else:
@@ -447,31 +474,20 @@ Responda em PRIMEIRA PESSOA DO SINGULAR com foco estrito em LC 116 e Reforma Tri
 
             dados_json = json.loads(json_str)
             if "dados_tabela" in dados_json:
-                if eh_aprofundamento_nbs:
-                    dados_tabela_estruturados = []
+                dados_tabela_estruturados = []
                 for item in dados_json["dados_tabela"]:
-                    sub_val = item.get("subitem", "")
+                    sub_val = item.get("subitem", item.get("subitem_lc_116", ""))
                     if sub_val and subitem_identificado_cache == "Geral":
                         subitem_identificado_cache = sub_val
 
-                    if eh_aprofundamento_nbs:
-                        dados_tabela_estruturados.append({
-                            "Item LC 116": item.get("item_lc_116", item.get("subitem", "")),
-                            "CTN": item.get("ctn", ""),
-                            "NBS": item.get("nbs", item.get("codigo_nbs", "")),
-                            "IndOp": item.get("ind_op", ""),
-                            "cClassTrib": item.get("c_clas", item.get("cclas_trib", "")),
-                            "CST IBS/CBS": item.get("cst_ibs_cbs", "Consultar Portal SVRS"),
-                        })
-                    else:
-                        dados_tabela_estruturados.append({
-                            "Subitem LC 116": sub_val,
-                            "Código NBS": item.get("codigo_nbs", ""),
-                            "Descrição Oficial da NBS": item.get("descricao_nbs", ""),
-                            "IndOp": item.get("ind_op", ""),
-                            "cClassTrib": item.get("c_clas", ""),
-                            "Área de Atuação com Exemplo Prático": item.get("exemplo_pratico", ""),
-                        })
+                    dados_tabela_estruturados.append({
+                        "Subitem LC 116": sub_val,
+                        "Código NBS": item.get("codigo_nbs", item.get("nbs", "")),
+                        "Descrição Oficial da NBS": item.get("descricao_nbs", item.get("descricao", "")),
+                        "IndOp": item.get("ind_op", ""),
+                        "cClassTrib": item.get("c_clas", item.get("cclas_trib", "")),
+                        "Área de Atuação com Exemplo Prático": item.get("exemplo_pratico", item.get("area_de_atuacao_com_exemplo_pratico", "")),
+                    })
         except Exception:
             pass
 
