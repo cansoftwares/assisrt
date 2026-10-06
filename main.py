@@ -148,6 +148,9 @@ def carregar_base_lc116():
             col_desc_lc = df.columns[1]
             col_nbs = df.columns[2]
             col_desc_nbs = df.columns[3]
+            
+            col_ind_op = df.columns[6] if len(df.columns) > 6 else df.columns[4]
+            col_c_clas = df.columns[8] if len(df.columns) > 8 else df.columns[5]
 
             df[col_item_lc] = df[col_item_lc].ffill()
             df[col_desc_lc] = df[col_desc_lc].ffill()
@@ -158,6 +161,8 @@ def carregar_base_lc116():
                 desc_lc = str(row[col_desc_lc]).strip()
                 cod_nbs = str(row[col_nbs]).strip()
                 desc_nbs = str(row[col_desc_nbs]).strip()
+                ind_op = str(row[col_ind_op]).strip() if col_ind_op in df.columns else ""
+                c_clas = str(row[col_c_clas]).strip() if col_c_clas in df.columns else ""
 
                 if subitem and subitem != "nan":
                     if subitem not in base_mapeada:
@@ -168,7 +173,12 @@ def carregar_base_lc116():
 
                     if cod_nbs and cod_nbs != "nan":
                         base_mapeada[subitem]["nbs_oficiais"].append(
-                            {"codigo": cod_nbs, "descricao": desc_nbs}
+                            {
+                                "codigo": cod_nbs, 
+                                "descricao": desc_nbs,
+                                "ind_op": ind_op if ind_op != "nan" else "",
+                                "c_clas": c_clas if c_clas != "nan" else ""
+                            }
                         )
 
             return base_mapeada
@@ -186,32 +196,34 @@ for subitem_k, info_v in dicionario_lc116.items():
     )
     for nbs_item in info_v["nbs_oficiais"]:
         resumo_base_texto += (
-            f"    -> NBS: {nbs_item['codigo']} | Descrição NBS:"
-            f" {nbs_item['descricao']}\n"
+            f"    -> NBS: {nbs_item['codigo']} | Descrição NBS: {nbs_item['descricao']} | "
+            f"IndOp: {nbs_item['ind_op']} | cClassTrib: {nbs_item['c_clas']}\n"
         )
 
 system_prompt_base = (
     "Você é o **Tribô**, um assistente de inteligência artificial altamente"
     " especializado em classificação fiscal de serviços, com foco na"
     " Nomenclatura Brasileira de Serviços (NBS) vinculada à Lei"
-    " Complementar 116/2003 e ao ecossistema da Reforma Tributária.\n\n"
+    " Complementar 116/2003 e ao ecossistema da Reforma Tributária (NFSe Nacional, IBS e CBS).\n\n"
     "🚨 **DIRETRIZES CRÍTICAS DE PREENCHIMENTO E ESCOPO:**\n"
     "1. **Restrição Absoluta de Tema:** Exclusivo para Reforma Tributária,"
     " LC 116/2003, NBS e classificação fiscal.\n"
     "2. **Tom em Primeira Pessoa do Singular:** Responda SEMPRE em **primeira"
     " pessoa do singular** (ex: 'identifiquei', 'apresento', 'consultei'). É"
     " proibido o uso do plural.\n"
-    "3. **Estilo de Resposta Direto e Natural:** Diga qual subitem da LC"
-    " 116/2003 você identificou e apresente o texto principal da análise.\n"
-    "4. **Exaustividade Obrigatória:** Liste absolutamente todos os códigos"
-    " NBS oficiais vinculados ao subitem na estrutura solicitada.\n"
-    "5. **Exemplo Prático Real:** A última coluna deve descrever um caso real"
-    " de mercado, sem copiar a descrição NBS.\n"
-    "6. **Formato JSON Oculto:** Forneça no final o bloco JSON exato com a"
-    " chave `dados_tabela` contendo: `subitem`, `codigo_nbs`, `descricao_nbs`, `exemplo_pratico`.\n"
-    "7. **O Coringa do Desenvolvedor:** Desenvolvido por **Claudio, futuro"
+    "3. **Foco Prático na NFSe Nacional:** Quando solicitado detalhamento de um código NBS específico, "
+    "apresente os parâmetros oficiais necessários para o preenchimento da NFSe Nacional:\n"
+    "   - **Item LC 116**\n"
+    "   - **CTN (Código de Tributação Nacional)** (conforme LC 116/2003)\n"
+    "   - **NBS**\n"
+    "   - **IndOp** (Indicador de Operação)\n"
+    "   - **cClassTrib** (Código de Classificação Tributária)\n"
+    "   - **CST IBS/CBS** (conforme Portal do SP - SVRS)\n"
+    "4. **Formato JSON Oculto:** Forneça no final o bloco JSON exato com a"
+    " chave `dados_tabela` contendo: `subitem`, `codigo_nbs`, `descricao_nbs`, `ind_op`, `c_clas`, `exemplo_pratico`.\n"
+    "5. **O Coringa do Desenvolvedor:** Desenvolvido por **Claudio, futuro"
     " Engenheiro capixaba de IA**.\n\n"
-    "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS):\n"
+    "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS / IndOp / cClassTrib):\n"
     f"{resumo_base_texto}"
 )
 
@@ -245,6 +257,8 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                         "Subitem LC 116": subitem_referencia,
                         "Código NBS": nbs_obj["codigo"],
                         "Descrição Oficial da NBS": nbs_obj["descricao"],
+                        "IndOp": nbs_obj["ind_op"],
+                        "cClassTrib": nbs_obj["c_clas"],
                         "Área de Atuação com Exemplo Prático": (
                             f"Execução de serviços especializados para"
                             f" {info_sub_rec['descricao_lc'].lower()}."
@@ -283,9 +297,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                                 use_container_width=True,
                             ):
                                 st.session_state["pending_nbs_prompt"] = (
-                                    f"Por favor, traga mais detalhes estratégicos, regras de"
-                                    f" tributação e enquadramento avançado para o código NBS"
-                                    f" {cod_nbs_atual}."
+                                    f"Por favor, me detalhe o código NBS {cod_nbs_atual} e me informe quais códigos fiscais devem ser preenchidos nos documentos fiscais com a Reforma Tributária."
                                 )
                                 st.rerun()
 
@@ -303,7 +315,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                     df_resposta.to_excel(writer, index=False, sheet_name="Enquadramento")
                     workbook = writer.book
                     worksheet = writer.sheets["Enquadramento"]
-                    colunas_larguras = {"A": 14, "B": 12, "C": 40, "D": 60}
+                    colunas_larguras = {"A": 14, "B": 12, "C": 35, "D": 12, "E": 18, "F": 50}
                     for coluna, largura in colunas_larguras.items():
                         worksheet.column_dimensions[coluna].width = largura
 
@@ -315,7 +327,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                                     horizontal="center", vertical="center", wrap_text=True
                                 )
                             else:
-                                if col_idx in [1, 2]:
+                                if col_idx in [1, 2, 4, 5]:
                                     cell.alignment = Alignment(
                                         horizontal="center", vertical="top", wrap_text=True
                                     )
@@ -374,13 +386,13 @@ if texto_processado:
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou diretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
-Gere a resposta de forma direta e natural em PRIMEIRA PESSOA DO SINGULAR, apresentando a análise, seguida da tabela Markdown contendo ABSOLUTAMENTE TODAS as linhas oficiais correspondentes com exemplos práticos reais. No final, forneça o JSON oculto com a chave `dados_tabela`.
+Gere a resposta de forma direta e natural em PRIMEIRA PESSOA DO SINGULAR, apresentando a análise, seguida da tabela Markdown contendo ABSOLUTAMENTE TODAS as linhas oficiais correspondentes. No final, forneça o JSON oculto com a chave `dados_tabela`.
 """
     else:
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador fez a seguinte consulta ou pedido de aprofundamento: '{texto_processado}'.
-Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira pessoa do singular o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados. Apresente o texto de análise e a tabela Markdown com todas as linhas exaustivas. No final, forneça o JSON oculto correspondente.
+Analise a Tabela de Referência Oficial fornecida acima. Se for um pedido sobre um código NBS específico, traga os detalhes estratégicos, o enquadramento fiscal detalhado para a NFSe Nacional (Item LC 116, CTN, NBS, IndOp, cClassTrib e CST IBS/CBS) e a tabela correspondente. Responda SEMPRE em primeira pessoa do singular. No final, forneça o JSON oculto correspondente.
 """
 
     system_proxy_final = {
@@ -424,6 +436,8 @@ Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira
                         "Subitem LC 116": sub_val,
                         "Código NBS": cod_nbs_val,
                         "Descrição Oficial da NBS": item.get("descricao_nbs", ""),
+                        "IndOp": item.get("ind_op", ""),
+                        "cClassTrib": item.get("c_clas", ""),
                         "Área de Atuação com Exemplo Prático": item.get(
                             "exemplo_pratico", ""
                         ),
