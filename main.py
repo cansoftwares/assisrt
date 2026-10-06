@@ -262,14 +262,14 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                 "*Importante: Escolha com precisão o NBS, a correta classificação garante a aplicação adequada das regras, mitigando riscos de bitributação ou autuações fiscais.*"
             )
 
-            # 3. Botões de Ações Rápidas organizados em linhas estruturadas de 4 colunas (com texto visível e compacto)
+            # 3. Botões de Ações Rápidas organizados em linhas estruturadas de 5 colunas
             if tabela_para_baixar:
                 st.markdown(
                     "<small><b>Ações rápidas:</b> <i>(Clique para aprofundar no código)</i></small>",
                     unsafe_allow_html=True,
                 )
                 
-                itens_por_linha = 4
+                itens_por_linha = 5
                 for i in range(0, len(tabela_para_baixar), itens_por_linha):
                     lote_atual = tabela_para_baixar[i : i + itens_por_linha]
                     cols = st.columns(itens_por_linha)
