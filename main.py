@@ -262,6 +262,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                 "*Importante: Escolha com precisão o NBS, a correta classificação garante a aplicação adequada das regras, mitigando riscos de bitributação ou autuações fiscais.*"
             )
 
+            # Restituição dos Botões de Ações Rápidas (Acesso Fácil)
             if tabela_para_baixar and not eh_aprofundamento:
                 st.markdown(
                     "<small><b>Ações rápidas:</b> <i>(Clique abaixo no NBS escolhido para se aprofundar sobre)</i></small>",
@@ -291,6 +292,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                 unsafe_allow_html=True,
             )
 
+            # Restituição do Botão de Download em Excel dinâmico e espelhado
             if tabela_para_baixar:
                 df_resposta = pd.DataFrame(tabela_para_baixar)
                 
