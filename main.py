@@ -287,3 +287,196 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                                     f" tributação e enquadramento avançado para o código NBS"
                                     f" {cod_nbs_atual}."
                                 )
+                                st.rerun()
+
+            # 4. Rodapé de valorização do profissional contábil
+            st.markdown(
+                "<small><i>Esta ferramenta atua como um suporte estratégico e inteligente de alto nível, não tendo o objetivo de substituir seu contador — <b>Valorize sempre esse profissional!</b></i></small>",
+                unsafe_allow_html=True,
+            )
+
+            # 5. Botão de Download do Excel isolado por último
+            if tabela_para_baixar:
+                df_resposta = pd.DataFrame(tabela_para_baixar)
+                output = io.BytesIO()
+                with pd.ExcelWriter(output, engine="openpyxl") as writer:
+                    df_resposta.to_excel(writer, index=False, sheet_name="Enquadramento")
+                    workbook = writer.book
+                    worksheet = writer.sheets["Enquadramento"]
+                    colunas_larguras = {"A": 14, "B": 12, "C": 40, "D": 60}
+                    for coluna, largura in colunas_larguras.items():
+                        worksheet.column_dimensions[coluna].width = largura
+
+                    for row_idx, row in enumerate(worksheet.iter_rows(min_row=1), start=1):
+                        for col_idx, cell in enumerate(row, start=1):
+                            if row_idx == 1:
+                                cell.font = Font(bold=True)
+                                cell.alignment = Alignment(
+                                    horizontal="center", vertical="center", wrap_text=True
+                                )
+                            else:
+                                if col_idx in [1, 2]:
+                                    cell.alignment = Alignment(
+                                        horizontal="center", vertical="top", wrap_text=True
+                                    )
+                                else:
+                                    cell.alignment = Alignment(
+                                        horizontal="left", vertical="top", wrap_text=True
+                                    )
+
+                excel_data = output.getvalue()
+                nome_arquivo_excel = (
+                    f"Relatorio_NBS_Inteligente_-_Subitem_{subitem_referencia}.xlsx"
+                )
+                st.download_button(
+                    label="📥 Baixar Relatório em Excel (.xlsx)",
+                    data=excel_data,
+                    file_name=nome_arquivo_excel,
+                    mime=(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    ),
+                    key=f"download_xlsx_{idx}",
+                )
+
+# ==========================================
+# 2. ENTRADA DE DADOS E PROCESSAMENTO DA IA
+# ==========================================
+mensagem_usuario = st.chat_input(
+    "Escreva sua dúvida ou código (ex: 17.02, contabilidade...)"
+)
+
+texto_processado = None
+if mensagem_usuario:
+    texto_processado = mensagem_usuario.strip()
+elif st.session_state["pending_nbs_prompt"]:
+    texto_processado = st.session_state["pending_nbs_prompt"]
+    st.session_state["pending_nbs_prompt"] = None
+
+if texto_processado:
+    with st.chat_message("user", avatar=avatar_usuario):
+        st.markdown(f"**Você**\n\n{texto_processado}")
+    st.session_state["lista_mensagens"].append(
+        {"role": "user", "content": texto_processado}
+    )
+
+    dados_tabela_estruturados = []
+    subitem_identificado_cache = "Geral"
+
+    subitem_encontrado_direto = None
+    for sub in dicionario_lc116.keys():
+        if sub.lower() in texto_processado.lower():
+            subitem_encontrado_direto = sub
+            break
+
+    if subitem_encontrado_direto:
+        subitem_identificado_cache = subitem_encontrado_direto
+        info_sub = dicionario_lc116[subitem_encontrado_direto]
+        instrucao_especifica = f"""
+[ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
+O utilizador mencionou diretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
+Gere a resposta de forma direta e natural em PRIMEIRA PESSOA DO SINGULAR, apresentando a análise, seguida da tabela Markdown contendo ABSOLUTAMENTE TODAS as linhas oficiais correspondentes com exemplos práticos reais. No final, forneça o JSON oculto com a chave `dados_tabela`.
+"""
+    else:
+        instrucao_especifica = f"""
+[ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
+O utilizador fez a seguinte consulta ou pedido de aprofundamento: '{texto_processado}'.
+Analise a Tabela de Referência Oficial fornecida acima, identifique em primeira pessoa do singular o(s) subitem(ns) da LC 116/2003 e os códigos NBS mais adequados. Apresente o texto de análise e a tabela Markdown com todas as linhas exaustivas. No final, forneça o JSON oculto correspondente.
+"""
+
+    system_proxy_final = {
+        "role": "system",
+        "content": system_prompt_base + "\n\n" + instrucao_especifica,
+    }
+
+    historico_chat = [
+        m
+        for m in st.session_state["lista_mensagens"]
+        if m["role"] in ["user", "assistant"]
+    ]
+    mensagens_para_ia = [system_proxy_final] + historico_chat
+
+    try:
+        resposta_modelo = modelo.chat.completions.create(
+            messages=mensagens_para_ia,
+            model="gemini-flash-lite-latest",
+            max_tokens=4000,
+        )
+
+        resposta_ia = resposta_modelo.choices[0].message.content
+
+        try:
+            if "```json" in resposta_ia:
+                json_str = resposta_ia.split("```json")[1].split("```")[0].strip()
+            elif "```" in resposta_ia:
+                json_str = resposta_ia.split("```")[1].split("```")[0].strip()
+            else:
+                json_str = ""
+
+            dados_json = json.loads(json_str)
+            if "dados_tabela" in dados_json:
+                for item in dados_json["dados_tabela"]:
+                    sub_val = item.get("subitem", "")
+                    if sub_val and subitem_identificado_cache == "Geral":
+                        subitem_identificado_cache = sub_val
+
+                    cod_nbs_val = item.get("codigo_nbs", "")
+                    dados_tabela_estruturados.append({
+                        "Subitem LC 116": sub_val,
+                        "Código NBS": cod_nbs_val,
+                        "Descrição Oficial da NBS": item.get("descricao_nbs", ""),
+                        "Área de Atuação com Exemplo Prático": item.get(
+                            "exemplo_pratico", ""
+                        ),
+                    })
+        except Exception:
+            pass
+
+        match_sub = re.search(r"subitem\s*([\d\.]+)", resposta_ia, re.IGNORECASE)
+        if match_sub:
+            subitem_identificado_cache = match_sub.group(1).strip()
+        elif subitem_encontrado_direto:
+            subitem_identificado_cache = subitem_encontrado_direto
+
+        if "```json" in resposta_ia:
+            resposta_ia_exibicao = resposta_ia.split("```json")[0].strip()
+        else:
+            resposta_ia_exibicao = resposta_ia
+
+        mensagem_ia = {
+            "role": "assistant",
+            "content": resposta_ia_exibicao,
+            "tabela_dados": dados_tabela_estruturados,
+            "subitem_ref": subitem_identificado_cache,
+        }
+        st.session_state["lista_mensagens"].append(mensagem_ia)
+
+        deve_focar_input = True
+        st.rerun()
+
+    except Exception as e:
+        st.error(f"Ocorreu um erro ao consultar a IA: {e}")
+
+if deve_focar_input:
+    st.components.v1.html(
+        """
+        <script>
+            function focarNovamente() {
+                const doc = window.parent.document;
+                const chatInput = doc.querySelector('[data-testid="stChatInput"] textarea');
+                if (chatInput) {
+                    chatInput.focus();
+                    return true;
+                }
+                return false;
+            }
+            let t = 0;
+            const iv = setInterval(function() {
+                if (focarNovamente() || t > 30) {
+                    clearInterval(iv);
+                }
+                t++;
+            }, 100);
+        </script>
+    """,
+        height=0,
+    )
