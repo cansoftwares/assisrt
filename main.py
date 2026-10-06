@@ -211,11 +211,11 @@ system_prompt_base = (
     "2. **Tom em Primeira Pessoa do Singular:** Responda SEMPRE em **primeira"
     " pessoa do singular** (ex: 'identifiquei', 'apresento', 'consultei'). É"
     " proibido o uso do plural.\n"
-    "3. **Formato de Resposta para Subitens:** Quando o usuário consultar um subitem da LC 116/2003 (ex: 17.19), "
-    "apresente a análise inicial em texto e **obrigatoriamente inclua uma Tabela Markdown completa com 6 colunas**: "
-    "Subitem LC 116, Código NBS, Descrição Oficial da NBS, IndOp, cClassTrib e Área de Atuação com Exemplo Prático.\n"
+    "3. **Formato de Resposta para Subitens (Consulta Inicial):** Quando o usuário consultar um subitem da LC 116/2003 (ex: 17.19), "
+    "apresente a análise inicial em texto e **obrigatoriamente inclua uma Tabela Markdown limpa com apenas 4 colunas**: "
+    "Subitem LC 116, Código NBS, Descrição Oficial da NBS e Área de Atuação com Exemplo Prático. **NÃO inclua colunas IndOp ou cClassTrib nesta tabela inicial**.\n"
     "4. **Foco Prático na NFSe Nacional (Ao aprofundar em um NBS via clique):** Quando solicitado o detalhamento de um código NBS específico via clique no botão rápido, "
-    "apresente uma análise completa estruturada com os parâmetros oficiais para preenchimento: Item LC 116, CTN, NBS, IndOp, cClassTrib e CST IBS/CBS.\n"
+    "apresente uma análise completa estruturada com os parâmetros fiscais avançados: Item LC 116, CTN, NBS, IndOp, cClassTrib e CST IBS/CBS.\n"
     "5. **Formato JSON Oculto:** Forneça no final o bloco JSON exato com a"
     " chave `dados_tabela` contendo os dados estruturados correspondentes.\n"
     "6. **O Coringa do Desenvolvedor:** Desenvolvido por **Claudio, futuro"
@@ -245,11 +245,12 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
         with st.chat_message("assistant", avatar=avatar_assistente):
             tabela_para_baixar = mensagem.get("tabela_dados", [])
             subitem_referencia = mensagem.get("subitem_ref", "Geral")
+            eh_aprofundamento = mensagem.get("eh_aprofundamento_nbs", False)
 
             # Nome do assistente ao lado do avatar do robô
             st.markdown("**Tribô – Seu assistente na Reforma Tributária**")
 
-            # 1. Texto principal da resposta da IA (incluindo a tabela Markdown de 6 colunas)
+            # 1. Texto principal da resposta da IA
             st.markdown(content, unsafe_allow_html=True)
 
             # 2. Aviso importante resumido
@@ -258,7 +259,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
             )
 
             # 3. Botões de Ações Rápidas organizados em 6 colunas (exibidos apenas na listagem do subitem)
-            if tabela_para_baixar and not mensagem.get("eh_aprofundamento_nbs", False):
+            if tabela_para_baixar and not eh_aprofundamento:
                 st.markdown(
                     "<small><b>Ações rápidas:</b> <i>(Clique para aprofundar no código)</i></small>",
                     unsafe_allow_html=True,
@@ -270,7 +271,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                     cols = st.columns(itens_por_linha)
                     
                     for j, row_data in enumerate(lote_atual):
-                        cod_nbs_atual = row_data.get("Código NBS", "")
+                        cod_nbs_atual = row_data.get("Código NBS", row_data.get("NBS", ""))
                         with cols[j]:
                             if st.button(
                                 f"🔍 {cod_nbs_atual}",
@@ -288,21 +289,29 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                 unsafe_allow_html=True,
             )
 
-            # 5. Botão de Download do Excel isolado por último (Garantindo rigorosamente as 6 colunas na ordem correta)
+            # 5. Botão de Download do Excel adaptado ao contexto (4 colunas na listagem / 6 colunas no aprofundamento)
             if tabela_para_baixar:
                 df_resposta = pd.DataFrame(tabela_para_baixar)
                 
-                # Assegurar a ordem exata das 6 colunas para o Excel corporativo
-                colunas_desejadas = [
-                    "Subitem LC 116", 
-                    "Código NBS", 
-                    "Descrição Oficial da NBS", 
-                    "IndOp", 
-                    "cClassTrib", 
-                    "Área de Atuação com Exemplo Prático"
-                ]
-                
-                # Preencher colunas ausentes caso seja visualização de aprofundamento
+                if not eh_aprofundamento:
+                    colunas_desejadas = [
+                        "Subitem LC 116", 
+                        "Código NBS", 
+                        "Descrição Oficial da NBS", 
+                        "Área de Atuação com Exemplo Prático"
+                    ]
+                    colunas_larguras = {"A": 14, "B": 14, "C": 35, "D": 50}
+                else:
+                    colunas_desejadas = [
+                        "Item LC 116", 
+                        "CTN", 
+                        "NBS", 
+                        "IndOp", 
+                        "cClassTrib", 
+                        "CST IBS/CBS"
+                    ]
+                    colunas_larguras = {"A": 14, "B": 10, "C": 14, "D": 12, "E": 14, "F": 25}
+
                 for col in colunas_desejadas:
                     if col not in df_resposta.columns:
                         df_resposta[col] = ""
@@ -315,8 +324,6 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                     workbook = writer.book
                     worksheet = writer.sheets["Enquadramento"]
                     
-                    # Larguras ajustadas para as 6 colunas perfeitamente alinhadas
-                    colunas_larguras = {"A": 14, "B": 14, "C": 35, "D": 10, "E": 14, "F": 50}
                     for coluna, largura in colunas_larguras.items():
                         worksheet.column_dimensions[coluna].width = largura
 
@@ -386,12 +393,12 @@ if texto_processado:
                 if nbs_item["codigo"] == nbs_alvo:
                     subitem_identificado_cache = sub_k
                     dados_tabela_estruturados.append({
-                        "Subitem LC 116": sub_k,
-                        "Código NBS": nbs_item["codigo"],
-                        "Descrição Oficial da NBS": nbs_item["descricao"],
+                        "Item LC 116": sub_k,
+                        "CTN": sub_k,
+                        "NBS": nbs_item["codigo"],
                         "IndOp": nbs_item["ind_op"],
                         "cClassTrib": nbs_item["c_clas"],
-                        "Área de Atuação com Exemplo Prático": f"Detalhamento oficial para o código NBS {nbs_alvo}.",
+                        "CST IBS/CBS": "Consultar Portal SVRS",
                     })
 
     subitem_encontrado_direto = None
@@ -409,8 +416,6 @@ if texto_processado:
                 "Subitem LC 116": subitem_encontrado_direto,
                 "Código NBS": nbs_obj["codigo"],
                 "Descrição Oficial da NBS": nbs_obj["descricao"],
-                "IndOp": nbs_obj["ind_op"],
-                "cClassTrib": nbs_obj["c_clas"],
                 "Área de Atuação com Exemplo Prático": (
                     f"Execução de serviços especializados para {info_sub['descricao_lc'].lower()}."
                 ),
@@ -419,21 +424,19 @@ if texto_processado:
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador mencionou diretamente o subitem '{subitem_encontrado_direto}' ({info_sub['descricao_lc']}).
-Gere a resposta em PRIMEIRA PESSOA DO SINGULAR, apresentando a análise descritiva e **gerando obrigatoriamente uma Tabela Markdown completa com 6 colunas**: 
+Gere a resposta em PRIMEIRA PESSOA DO SINGULAR, apresentando a análise descritiva e **gerando obrigatoriamente uma Tabela Markdown limpa com exatamente 4 colunas**: 
 1. Subitem LC 116
 2. Código NBS
 3. Descrição Oficial da NBS
-4. IndOp
-5. cClassTrib
-6. Área de Atuação com Exemplo Prático
-Preencha rigorosamente com todas as correspondências oficiais daquele subitem. No final, forneça o bloco JSON oculto correspondente.
+4. Área de Atuação com Exemplo Prático
+**ATENÇÃO:** É terminantemente proibido incluir as colunas IndOp ou cClassTrib nesta tabela inicial. No final, forneça o bloco JSON oculto correspondente.
 """
     elif eh_aprofundamento_nbs:
         instrucao_especifica = f"""
 [ORIENTAÇÃO ESPECÍFICA PARA ESTA MENSAGEM]
 O utilizador clicou no acesso rápido para aprofundar no código NBS {nbs_alvo}.
 Apresente uma análise detalhada e estratégica em PRIMEIRA PESSOA DO SINGULAR sobre este NBS, explicando os parâmetros e a aplicação prática para a Reforma Tributária. 
-Forneça a tabela Markdown contendo exatamente as 6 colunas oficiais: Subitem LC 116, Código NBS, Descrição Oficial da NBS, IndOp, cClassTrib e Área de Atuação com Exemplo Prático.
+Forneça a tabela Markdown detalhada contendo os campos técnicos para preenchimento da NFSe Nacional: Item LC 116, CTN, NBS, IndOp, cClassTrib e CST IBS/CBS.
 No final, inclua o JSON oculto correspondente.
 """
     else:
@@ -474,20 +477,29 @@ Responda em PRIMEIRA PESSOA DO SINGULAR com foco estrito em LC 116 e Reforma Tri
 
             dados_json = json.loads(json_str)
             if "dados_tabela" in dados_json:
-                dados_tabela_estruturados = []
+                if eh_aprofundamento_nbs:
+                    dados_tabela_estruturados = []
                 for item in dados_json["dados_tabela"]:
                     sub_val = item.get("subitem", item.get("subitem_lc_116", ""))
                     if sub_val and subitem_identificado_cache == "Geral":
                         subitem_identificado_cache = sub_val
 
-                    dados_tabela_estruturados.append({
-                        "Subitem LC 116": sub_val,
-                        "Código NBS": item.get("codigo_nbs", item.get("nbs", "")),
-                        "Descrição Oficial da NBS": item.get("descricao_nbs", item.get("descricao", "")),
-                        "IndOp": item.get("ind_op", ""),
-                        "cClassTrib": item.get("c_clas", item.get("cclas_trib", "")),
-                        "Área de Atuação com Exemplo Prático": item.get("exemplo_pratico", item.get("area_de_atuacao_com_exemplo_pratico", "")),
-                    })
+                    if eh_aprofundamento_nbs:
+                        dados_tabela_estruturados.append({
+                            "Item LC 116": item.get("item_lc_116", item.get("subitem", "")),
+                            "CTN": item.get("ctn", ""),
+                            "NBS": item.get("nbs", item.get("codigo_nbs", "")),
+                            "IndOp": item.get("ind_op", ""),
+                            "cClassTrib": item.get("c_clas", item.get("cclas_trib", "")),
+                            "CST IBS/CBS": item.get("cst_ibs_cbs", "Consultar Portal SVRS"),
+                        })
+                    else:
+                        dados_tabela_estruturados.append({
+                            "Subitem LC 116": sub_val,
+                            "Código NBS": item.get("codigo_nbs", item.get("nbs", "")),
+                            "Descrição Oficial da NBS": item.get("descricao_nbs", item.get("descricao", "")),
+                            "Área de Atuação com Exemplo Prático": item.get("exemplo_pratico", item.get("area_de_atuacao_com_exemplo_pratico", "")),
+                        })
         except Exception:
             pass
 
