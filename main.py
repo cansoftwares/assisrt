@@ -237,7 +237,7 @@ system_prompt_base = (
     " estritamente proibido o uso do plural.\n"
     "3. **Separação Rigorosa de Telas:**\n"
     "   - **Consulta Inicial (Subitem):** Apresente **apenas** a tabela com 4 colunas (`Subitem LC 116`, `Código NBS`, `Descrição Oficial da NBS`, `Área de Atuação com Exemplo Prático`) contendo **exclusivamente** os códigos NBS diretamente vinculados àquele subitem exato na base oficial.\n"
-    "   - **Aprofundamento (Clique no NBS):** Apresente a tabela de 4 colunas (`Subitem LC 116`, `Código NBS`, `Descrição Oficial da NBS`, `Áreas de Atuação com Exemplos Práticos`) contendo de 3 a 5 exemplos práticos consolidados na célula. Logo abaixo, inclua a **LEGENDA** detalhando individualmente o significado de cada exemplo prático, além dos códigos IndOp e cClassTrib.\n"
+    "   - **Aprofundamento (Clique no NBS):** Apresente a tabela com as exatas colunas (`Subitem LC 116`, `CTN`, `Código NBS`, `IndOp`, `cClassTrib`, `CST IBS/CBS`, `Exemplo Prático`) contendo de 3 a 5 exemplos práticos consolidados na célula. Logo abaixo, inclua a **LEGENDA** detalhando individualmente o significado de cada exemplo prático, além dos códigos IndOp e cClassTrib.\n"
     "4. **Formato JSON Obrigatório para Espelhamento Exato no Excel:** Inclua sempre um bloco de código JSON isolado contendo exatamente a chave `dados_tabela`.\n\n"
     "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS / IndOp / cClassTrib):\n"
     f"{resumo_base_texto}"
@@ -320,13 +320,14 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                 else:
                     colunas_desejadas = [
                         "Subitem LC 116", 
+                        "CTN", 
                         "Código NBS", 
-                        "Descrição Oficial da NBS", 
-                        "Áreas de Atuação com Exemplos Práticos",
                         "IndOp", 
-                        "cClassTrib"
+                        "cClassTrib", 
+                        "CST IBS/CBS", 
+                        "Exemplo Prático"
                     ]
-                    colunas_larguras = {"A": 14, "B": 14, "C": 35, "D": 55, "E": 20, "F": 20}
+                    colunas_larguras = {"A": 14, "B": 10, "C": 16, "D": 14, "E": 18, "F": 16, "G": 55}
                     
                     nbs_referencia_arquivo = ""
                     if tabela_para_baixar:
@@ -357,7 +358,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                                     horizontal="center", vertical="center", wrap_text=True
                                 )
                             else:
-                                if col_idx in [1, 2, 5, 6]:
+                                if col_idx in [1, 2, 3, 4, 5, 6]:
                                     cell.alignment = Alignment(
                                         horizontal="center", vertical="top", wrap_text=True
                                     )
@@ -446,11 +447,12 @@ if texto_processado:
 
             dados_tabela_estruturados.append({
                 "Subitem LC 116": subitem_encontrado_exato,
+                "CTN": "",
                 "Código NBS": nbs_alvo,
-                "Descrição Oficial da NBS": desc_nbs_oficial_base,
-                "Áreas de Atuação com Exemplos Práticos": exemplos_consolidados,
                 "IndOp": ind_ops_str,
                 "cClassTrib": c_clas_str,
+                "CST IBS/CBS": "",
+                "Exemplo Prático": exemplos_consolidados,
             })
 
     subitem_encontrado_direto = None
@@ -506,7 +508,7 @@ No final da resposta, inclua obrigatoriamente um bloco de código JSON isolado c
         desc_nbs_oficial_val = desc_nbs_oficial_base if 'desc_nbs_oficial_base' in locals() else 'Serviço associado'
         c_clas_dict_val = c_clas_dict if 'c_clas_dict' in locals() else {}
         ind_ops_dict_val = ind_ops_dict if 'ind_ops_dict' in locals() else {}
-        exemplos_val = dados_tabela_estruturados[0]['Áreas de Atuação com Exemplos Práticos'] if dados_tabela_estruturados else ''
+        exemplos_val = dados_tabela_estruturados[0]['Exemplo Prático'] if dados_tabela_estruturados else ''
 
         legenda_indop_linhas = "\n  - ".join([f"**{k}:** {v}" for k, v in ind_ops_dict_val.items()]) if ind_ops_dict_val else "Nenhum"
         legenda_cclas_linhas = "\n  - ".join([f"**{k}:** {v}" for k, v in c_clas_dict_val.items()]) if c_clas_dict_val else "Nenhum"
@@ -517,9 +519,9 @@ O utilizador solicitou o aprofundamento no código NBS {nbs_alvo} vinculado ao s
 Inicie com uma abordagem simpática e acolhedora em primeira pessoa: "Claro! Analisei com atenção o código NBS {nbs_alvo}, cuja descrição oficial na base é "{desc_nbs_oficial_val}", vinculado ao subitem {subitem_identificado_cache} da Lei Complementar nº 116/2003 ({desc_lc_val})."
 
 **REGRA DE OURO DE LAYOUT:** 
-- Apresente **imediatamente** a tabela estruturada contendo **exatamente estas 4 colunas**: 
-  `| Subitem LC 116 | Código NBS | Descrição Oficial da NBS | Áreas de Atuação com Exemplos Práticos |`
-- Preencha com **uma única linha** para este NBS, contendo entre 3 e 5 exemplos práticos detalhados na célula correspondente.
+- Apresente **imediatamente** a tabela estruturada contendo **exatamente estas 7 colunas**: 
+  `| Subitem LC 116 | CTN | Código NBS | IndOp | cClassTrib | CST IBS/CBS | Exemplo Prático |`
+- Preencha com **uma única linha** para este NBS, contendo entre 3 e 5 exemplos práticos detalhados na coluna `Exemplo Prático`.
 - Abaixo da tabela, inclua obrigatoriamente a **LEGENDA** detalhando e explicando o significado de cada exemplo prático citado, bem como os códigos fiscais (IndOp e cClassTrib):
   **LEGENDA:**
   - **Explicação dos Exemplos Práticos:** Detalhamento normativo e operacional de cada situação descrita na tabela.
@@ -574,11 +576,12 @@ Responda em PRIMEIRA PESSOA DO SINGULAR com foco estrito em LC 116 e Reforma Tri
                     if eh_aprofundamento_nbs:
                         temp_estruturados.append({
                             "Subitem LC 116": item.get("Subitem LC 116", item.get("subitem_lc_116", subitem_identificado_cache)),
+                            "CTN": item.get("CTN", item.get("ctn", "")),
                             "Código NBS": item.get("Código NBS", item.get("nbs", nbs_alvo)),
-                            "Descrição Oficial da NBS": item.get("Descrição Oficial da NBS", item.get("descricao_nbs", desc_nbs_oficial_base)),
-                            "Áreas de Atuação com Exemplos Práticos": item.get("Áreas de Atuação com Exemplos Práticos", item.get("exemplo_pratico", exemplos_val)),
                             "IndOp": item.get("IndOp", item.get("ind_op", ind_ops_str)),
                             "cClassTrib": item.get("cClassTrib", item.get("c_clas", c_clas_str)),
+                            "CST IBS/CBS": item.get("CST IBS/CBS", item.get("cst_ibs_cbs", "")),
+                            "Exemplo Prático": item.get("Exemplo Prático", item.get("exemplo_pratico", exemplos_val)),
                         })
                     else:
                         sub_val = item.get("Subitem LC 116", item.get("subitem", item.get("subitem_lc_116", subitem_identificado_cache)))
