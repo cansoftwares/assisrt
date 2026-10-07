@@ -236,8 +236,8 @@ system_prompt_base = (
     " pessoa do singular** (ex: 'analisei', 'identifiquei', 'apresento', 'consultei'). É"
     " estritamente proibido o uso do plural.\n"
     "3. **Separação Rigorosa de Telas:**\n"
-    "   - **Consulta Inicial (Subitem):** Apresente **apenas** a tabela com 4 colunas (`Subitem LC 116`, `Código NBS`, `Descrição Oficial da NBS`, `Área de Atuação com Exemplo Prático`) contendo **exclusivamente** os códigos NBS diretamente vinculados àquele subitem exato na base oficial. **NÃO** inclua IndOp, cClassTrib ou Legenda nesta etapa.\n"
-    "   - **Aprofundamento (Clique no NBS):** Inicie com simpatia e apresente a tabela contendo exatamente 6 colunas (`Subitem LC 116`, `Código NBS`, `Descrição Oficial da NBS`, `Área de Atuação com Exemplo Prático`, `IndOp`, `cClassTrib`) com **uma única linha por NBS**, agrupando todos os códigos de IndOp e cClassTrib na mesma célula se houver mais de um. Logo abaixo, inclua a **LEGENDA** detalhando individualmente cada IndOp e cClassTrib.\n"
+    "   - **Consulta Inicial (Subitem):** Apresente **apenas** a tabela com 4 colunas (`Subitem LC 116`, `Código NBS`, `Descrição Oficial da NBS`, `Área de Atuação com Exemplo Prático`) contendo **exclusivamente** os códigos NBS diretamente vinculados àquele subitem exato na base oficial.\n"
+    "   - **Aprofundamento (Clique no NBS):** Apresente a tabela de 4 colunas (`Subitem LC 116`, `Código NBS`, `Descrição Oficial da NBS`, `Áreas de Atuação com Exemplos Práticos`) contendo de 3 a 5 exemplos práticos consolidados na célula. Logo abaixo, inclua a **LEGENDA** detalhando individualmente o significado de cada exemplo prático, além dos códigos IndOp e cClassTrib.\n"
     "4. **Formato JSON Obrigatório para Espelhamento Exato no Excel:** Inclua sempre um bloco de código JSON isolado contendo exatamente a chave `dados_tabela`.\n\n"
     "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS / IndOp / cClassTrib):\n"
     f"{resumo_base_texto}"
@@ -322,11 +322,11 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                         "Subitem LC 116", 
                         "Código NBS", 
                         "Descrição Oficial da NBS", 
-                        "Área de Atuação com Exemplo Prático",
+                        "Áreas de Atuação com Exemplos Práticos",
                         "IndOp", 
                         "cClassTrib"
                     ]
-                    colunas_larguras = {"A": 14, "B": 14, "C": 35, "D": 50, "E": 20, "F": 20}
+                    colunas_larguras = {"A": 14, "B": 14, "C": 35, "D": 55, "E": 20, "F": 20}
                     
                     nbs_referencia_arquivo = ""
                     if tabela_para_baixar:
@@ -429,20 +429,26 @@ if texto_processado:
             
             desc_nbs_oficial_base = nbs_obj["descricao"]
             
+            # Gerando entre 3 e 5 exemplos práticos consolidados
             if "demolição" in desc_nbs_oficial_base.lower():
-                exemplo_txt = "Construção civil e engenharia - Exemplo: Demolição controlada de antiga edificação comercial para liberação de terreno."
-            elif "edifícios residenciais" in desc_nbs_oficial_base.lower():
-                exemplo_txt = "Construção civil e engenharia - Exemplo: Reforma estrutural e acabamento em prédio residencial."
-            elif "edifícios comerciais" in desc_nbs_oficial_base.lower():
-                exemplo_txt = "Infraestrutura e corporativo - Exemplo: Conservação e revitalização de fachada de edifício comercial."
+                exemplos_consolidados = (
+                    "1. Demolição controlada de antiga edificação comercial para liberação de terreno.\n"
+                    "2. Derrubada estrutural parcial em prédio industrial para modernização.\n"
+                    "3. Desmonte mecânico de estruturas de concreto armado em área urbana.\n"
+                    "4. Remoção de elementos estruturais para requalificação de fachadas históricas."
+                )
             else:
-                exemplo_txt = f"Serviços especializados para {desc_nbs_oficial_base.lower()}."
+                exemplos_consolidados = (
+                    f"1. Prestação principal especializada em {desc_nbs_oficial_base.lower()}.\n"
+                    f"2. Atendimento corporativo continuado para {desc_nbs_oficial_base.lower()}.\n"
+                    f"3. Execução técnica e emissão de laudo para {desc_nbs_oficial_base.lower()}."
+                )
 
             dados_tabela_estruturados.append({
                 "Subitem LC 116": subitem_encontrado_exato,
                 "Código NBS": nbs_alvo,
                 "Descrição Oficial da NBS": desc_nbs_oficial_base,
-                "Área de Atuação com Exemplo Prático": exemplo_txt,
+                "Áreas de Atuação com Exemplos Práticos": exemplos_consolidados,
                 "IndOp": ind_ops_str,
                 "cClassTrib": c_clas_str,
             })
@@ -500,7 +506,7 @@ No final da resposta, inclua obrigatoriamente um bloco de código JSON isolado c
         desc_nbs_oficial_val = desc_nbs_oficial_base if 'desc_nbs_oficial_base' in locals() else 'Serviço associado'
         c_clas_dict_val = c_clas_dict if 'c_clas_dict' in locals() else {}
         ind_ops_dict_val = ind_ops_dict if 'ind_ops_dict' in locals() else {}
-        exemplo_val = dados_tabela_estruturados[0]['Área de Atuação com Exemplo Prático'] if dados_tabela_estruturados else ''
+        exemplos_val = dados_tabela_estruturados[0]['Áreas de Atuação com Exemplos Práticos'] if dados_tabela_estruturados else ''
 
         legenda_indop_linhas = "\n  - ".join([f"**{k}:** {v}" for k, v in ind_ops_dict_val.items()]) if ind_ops_dict_val else "Nenhum"
         legenda_cclas_linhas = "\n  - ".join([f"**{k}:** {v}" for k, v in c_clas_dict_val.items()]) if c_clas_dict_val else "Nenhum"
@@ -511,18 +517,12 @@ O utilizador solicitou o aprofundamento no código NBS {nbs_alvo} vinculado ao s
 Inicie com uma abordagem simpática e acolhedora em primeira pessoa: "Claro! Analisei com atenção o código NBS {nbs_alvo}, cuja descrição oficial na base é "{desc_nbs_oficial_val}", vinculado ao subitem {subitem_identificado_cache} da Lei Complementar nº 116/2003 ({desc_lc_val})."
 
 **REGRA DE OURO DE LAYOUT:** 
-- Apresente **imediatamente** a tabela estruturada contendo **exatamente estas 6 colunas**: 
-  `| Subitem LC 116 | Código NBS | Descrição Oficial da NBS | Área de Atuação com Exemplo Prático | IndOp | cClassTrib |`
-- Preencha com **uma única linha** para este NBS, agrupando os múltiplos códigos na mesma célula se houver mais de um:
-  - Subitem LC 116: {subitem_identificado_cache}
-  - Código NBS: {nbs_alvo}
-  - Descrição Oficial da NBS: {json.dumps(desc_nbs_oficial_val, ensure_ascii=False)}
-  - Área de Atuação com Exemplo Prático: {json.dumps(exemplo_val, ensure_ascii=False)}
-  - IndOp: {json.dumps(ind_ops_str, ensure_ascii=False)}
-  - cClassTrib: {json.dumps(c_clas_str, ensure_ascii=False)}
-
-- Abaixo da tabela, inclua obrigatoriamente a **LEGENDA** detalhando individualmente cada código IndOp e cada código cClassTrib com suas respectivas descrições extraídas diretamente da base oficial:
+- Apresente **imediatamente** a tabela estruturada contendo **exatamente estas 4 colunas**: 
+  `| Subitem LC 116 | Código NBS | Descrição Oficial da NBS | Áreas de Atuação com Exemplos Práticos |`
+- Preencha com **uma única linha** para este NBS, contendo entre 3 e 5 exemplos práticos detalhados na célula correspondente.
+- Abaixo da tabela, inclua obrigatoriamente a **LEGENDA** detalhando e explicando o significado de cada exemplo prático citado, bem como os códigos fiscais (IndOp e cClassTrib):
   **LEGENDA:**
+  - **Explicação dos Exemplos Práticos:** Detalhamento normativo e operacional de cada situação descrita na tabela.
   - **IndOp:** 
     - {legenda_indop_linhas}
   - **cClassTrib:** 
@@ -576,7 +576,7 @@ Responda em PRIMEIRA PESSOA DO SINGULAR com foco estrito em LC 116 e Reforma Tri
                             "Subitem LC 116": item.get("Subitem LC 116", item.get("subitem_lc_116", subitem_identificado_cache)),
                             "Código NBS": item.get("Código NBS", item.get("nbs", nbs_alvo)),
                             "Descrição Oficial da NBS": item.get("Descrição Oficial da NBS", item.get("descricao_nbs", desc_nbs_oficial_base)),
-                            "Área de Atuação com Exemplo Prático": item.get("Área de Atuação com Exemplo Prático", item.get("exemplo_pratico", exemplo_val)),
+                            "Áreas de Atuação com Exemplos Práticos": item.get("Áreas de Atuação com Exemplos Práticos", item.get("exemplo_pratico", exemplos_val)),
                             "IndOp": item.get("IndOp", item.get("ind_op", ind_ops_str)),
                             "cClassTrib": item.get("cClassTrib", item.get("c_clas", c_clas_str)),
                         })
