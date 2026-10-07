@@ -156,7 +156,6 @@ def carregar_base_lc116():
 
             df[coluna_subitem_lc] = df[coluna_subitem_lc].ffill()
             df[coluna_desc_lc] = df[coluna_desc_lc].ffill()
-            df[colunal_desc_limpa = df[coluna_desc_lc].str.replace(r"^\d{2}\.\d{2}\s*-\s*", "", regex=True) if coluna_desc_lc in df.columns else df[coluna_subitem_lc]]
             df[col_nbs] = df[col_nbs].ffill()
             if col_desc_nbs in df.columns:
                 df[col_desc_nbs] = df[col_desc_nbs].ffill()
