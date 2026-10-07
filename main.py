@@ -237,7 +237,7 @@ system_prompt_base = (
     " estritamente proibido o uso do plural.\n"
     "3. **Separação Rigorosa de Telas:**\n"
     "   - **Consulta Inicial (Subitem):** Apresente **apenas** a tabela com 4 colunas (`Subitem LC 116`, `Código NBS`, `Descrição Oficial da NBS`, `Área de Atuação com Exemplo Prático`) contendo **exclusivamente** os códigos NBS diretamente vinculados àquele subitem exato na base oficial.\n"
-    "   - **Aprofundamento (Clique no NBS):** Apresente a tabela com as exatas colunas (`Subitem LC 116`, `CTN`, `Código NBS`, `IndOp`, `cClassTrib`, `CST IBS/CBS`, `Exemplo Prático`) contendo de 3 a 5 exemplos práticos consolidados na célula. Logo abaixo, inclua a **LEGENDA** detalhando individualmente o significado de cada exemplo prático, além dos códigos IndOp e cClassTrib.\n"
+    "   - **Aprofundamento (Clique no NBS):** Apresente a tabela contendo as colunas exatas exigidas e logo abaixo inclua a **LEGENDA** detalhando individualmente o significado de cada código presente (Subitem LC 116, CTN, Código NBS, CST IBS/CBS, IndOp e cClassTrib).\n"
     "4. **Formato JSON Obrigatório para Espelhamento Exato no Excel:** Inclua sempre um bloco de código JSON isolado contendo exatamente a chave `dados_tabela`.\n\n"
     "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS / IndOp / cClassTrib):\n"
     f"{resumo_base_texto}"
@@ -304,7 +304,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                 unsafe_allow_html=True,
             )
 
-            # Botão de Download em Excel perfeitamente espelhado com nomes dinâmicos inteligentes
+            # Botão de Download em Excel com nomes dinâmicos inteligentes
             if tabela_para_baixar:
                 df_resposta = pd.DataFrame(tabela_para_baixar)
                 
@@ -430,19 +430,17 @@ if texto_processado:
             
             desc_nbs_oficial_base = nbs_obj["descricao"]
             
-            # Gerando entre 3 e 5 exemplos práticos consolidados
             if "demolição" in desc_nbs_oficial_base.lower():
                 exemplos_consolidados = (
-                    "1. Demolição controlada de antiga edificação comercial para liberação de terreno.\n"
-                    "2. Derrubada estrutural parcial em prédio industrial para modernização.\n"
-                    "3. Desmonte mecânico de estruturas de concreto armado em área urbana.\n"
-                    "4. Remoção de elementos estruturais para requalificação de fachadas históricas."
+                    "1. Demolição de antiga edificação comercial para liberação de terreno. "
+                    "2. Derrubada controlada de muros e estruturas de alvenaria em área urbana. "
+                    "3. Desmonte mecânico de galpão industrial obsoleto visando à revitalização do espaço."
                 )
             else:
                 exemplos_consolidados = (
-                    f"1. Prestação principal especializada em {desc_nbs_oficial_base.lower()}.\n"
-                    f"2. Atendimento corporativo continuado para {desc_nbs_oficial_base.lower()}.\n"
-                    f"3. Execução técnica e emissão de laudo para {desc_nbs_oficial_base.lower()}."
+                    f"1. Prestação Principal: Execução de serviços referentes a {desc_nbs_oficial_base.lower()} para atendimento corporativo. "
+                    f"2. Operação Especializada: Atividades técnicas correlatas a {desc_nbs_oficial_base.lower()} com emissão de laudo. "
+                    f"3. Suporte Contínuo: Acompanhamento e suporte operacional especializado em {desc_nbs_oficial_base.lower()}."
                 )
 
             dados_tabela_estruturados.append({
@@ -469,13 +467,9 @@ if texto_processado:
         for nbs_k, nbs_obj in info_sub["nbs_oficiais"].items():
             desc_nbs_oficial = nbs_obj["descricao"]
             if "demolição" in desc_nbs_oficial.lower():
-                exemplo_txt = "Construção civil e engenharia - Exemplo: Demolição controlada de antiga edificação comercial para liberação de terreno."
-            elif "edifícios residenciais" in desc_nbs_oficial.lower():
-                exemplo_txt = "Construção civil e engenharia - Exemplo: Reforma estrutural e acabamento em prédio residencial."
-            elif "edifícios comerciais" in desc_nbs_oficial.lower():
-                exemplo_txt = "Infraestrutura e corporativo - Exemplo: Conservação e revitalização de fachada de edifício comercial."
+                exemplo_txt = "1. Demolição de antiga edificação comercial para liberação de terreno. 2. Derrubada controlada de muros e estruturas de alvenaria em área urbana. 3. Desmonte mecânico de galpão industrial obsoleto visando à revitalização do espaço."
             else:
-                exemplo_txt = f"Serviços especializados para {desc_nbs_oficial.lower()}."
+                exemplo_txt = f"1. Prestação Principal: Execução de serviços referentes a {desc_nbs_oficial.lower()}."
 
             dados_tabela_estruturados.append({
                 "Subitem LC 116": subitem_encontrado_direto,
@@ -496,10 +490,8 @@ Apresente obrigatoriamente a Tabela Markdown limpa com **exatamente 4 colunas** 
 3. Descrição Oficial da NBS
 4. Área de Atuação com Exemplo Prático
 
-**ATENÇÃO:** É terminantemente proibido exibir menções a IndOp ou cClassTrib nesta tabela inicial, bem como exibir qualquer legenda.
-
 **OBRIGATÓRIO - BLOCO JSON DE ESPELHAMENTO PARA O EXCEL:**
-No final da resposta, inclua obrigatoriamente um bloco de código JSON isolado contendo exatamente a chave `dados_tabela` com a lista contendo os objetos exatos (`Subitem LC 116`, `Código NBS`, `Descrição Oficial da NBS`, `Área de Atuação com Exemplo Prático`).
+No final da resposta, inclua obrigatoriamente um bloco de código JSON isolado contendo exatamente a chave `dados_tabela` com a lista contendo os objetos exatos.
 """
     elif eh_aprofundamento_nbs:
         c_clas_str = dados_tabela_estruturados[0]['cClassTrib'] if dados_tabela_estruturados else ''
@@ -508,7 +500,6 @@ No final da resposta, inclua obrigatoriamente um bloco de código JSON isolado c
         desc_nbs_oficial_val = desc_nbs_oficial_base if 'desc_nbs_oficial_base' in locals() else 'Serviço associado'
         c_clas_dict_val = c_clas_dict if 'c_clas_dict' in locals() else {}
         ind_ops_dict_val = ind_ops_dict if 'ind_ops_dict' in locals() else {}
-        exemplos_val = dados_tabela_estruturados[0]['Exemplo Prático'] if dados_tabela_estruturados else ''
 
         legenda_indop_linhas = "\n  - ".join([f"**{k}:** {v}" for k, v in ind_ops_dict_val.items()]) if ind_ops_dict_val else "Nenhum"
         legenda_cclas_linhas = "\n  - ".join([f"**{k}:** {v}" for k, v in c_clas_dict_val.items()]) if c_clas_dict_val else "Nenhum"
@@ -521,17 +512,20 @@ Inicie com uma abordagem simpática e acolhedora em primeira pessoa: "Claro! Ana
 **REGRA DE OURO DE LAYOUT:** 
 - Apresente **imediatamente** a tabela estruturada contendo **exatamente estas 7 colunas**: 
   `| Subitem LC 116 | CTN | Código NBS | IndOp | cClassTrib | CST IBS/CBS | Exemplo Prático |`
-- Preencha com **uma única linha** para este NBS, contendo entre 3 e 5 exemplos práticos detalhados na coluna `Exemplo Prático`.
-- Abaixo da tabela, inclua obrigatoriamente a **LEGENDA** detalhando e explicando o significado de cada exemplo prático citado, bem como os códigos fiscais (IndOp e cClassTrib):
+- Preencha com **uma única linha** para este NBS, deixando as colunas **CTN** e **CST IBS/CBS** estritamente **em branco**, e contendo os exemplos práticos detalhados na coluna `Exemplo Prático`.
+- Abaixo da tabela, inclua obrigatoriamente a **LEGENDA** detalhando e explicando o significado de cada código presente na tabela (Subitem LC 116, CTN, Código NBS, CST IBS/CBS, IndOp e cClassTrib), **sem incluir** nenhuma seção chamada "Explicação dos Exemplos Práticos":
   **LEGENDA:**
-  - **Explicação dos Exemplos Práticos:** Detalhamento normativo e operacional de cada situação descrita na tabela.
+  - **Subitem LC 116:** Item da lista de serviços anexa à Lei Complementar nº 116/2003.
+  - **CTN:** Código Tributário Nacional (Coluna mantida em branco para futura regulamentação específica).
+  - **Código NBS:** Nomenclatura Brasileira de Serviços aplicada ao enquadramento fiscal.
+  - **CST IBS/CBS:** Código da Situação Tributária para o IBS e a CBS (Coluna mantida em branco no enquadramento atual).
   - **IndOp:** 
     - {legenda_indop_linhas}
   - **cClassTrib:** 
     - {legenda_cclas_linhas}
 
 **OBRIGATÓRIO - BLOCO JSON DE ESPELHAMENTO PARA O EXCEL:**
-No final da resposta, inclua obrigatoriamente um bloco de código JSON isolado contendo exatamente a chave `dados_tabela` com a lista contendo o objeto exato.
+No final da resposta, inclua obrigatoriamente um bloco de código JSON isolado contendo exatamente a chave `dados_tabela` com a lista contendo o objeto exato com CTN e CST IBS/CBS em branco.
 """
     else:
         instrucao_especifica = f"""
@@ -576,12 +570,12 @@ Responda em PRIMEIRA PESSOA DO SINGULAR com foco estrito em LC 116 e Reforma Tri
                     if eh_aprofundamento_nbs:
                         temp_estruturados.append({
                             "Subitem LC 116": item.get("Subitem LC 116", item.get("subitem_lc_116", subitem_identificado_cache)),
-                            "CTN": item.get("CTN", item.get("ctn", "")),
+                            "CTN": "",
                             "Código NBS": item.get("Código NBS", item.get("nbs", nbs_alvo)),
                             "IndOp": item.get("IndOp", item.get("ind_op", ind_ops_str)),
                             "cClassTrib": item.get("cClassTrib", item.get("c_clas", c_clas_str)),
-                            "CST IBS/CBS": item.get("CST IBS/CBS", item.get("cst_ibs_cbs", "")),
-                            "Exemplo Prático": item.get("Exemplo Prático", item.get("exemplo_pratico", exemplos_val)),
+                            "CST IBS/CBS": "",
+                            "Exemplo Prático": item.get("Exemplo Prático", item.get("exemplo_pratico", "")),
                         })
                     else:
                         sub_val = item.get("Subitem LC 116", item.get("subitem", item.get("subitem_lc_116", subitem_identificado_cache)))
