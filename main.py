@@ -304,7 +304,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                 unsafe_allow_html=True,
             )
 
-            # Botão de Download em Excel perfeitamente espelhado
+            # Botão de Download em Excel perfeitamente espelhado com nomes dinâmicos inteligentes
             if tabela_para_baixar:
                 df_resposta = pd.DataFrame(tabela_para_baixar)
                 
@@ -316,6 +316,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                         "Área de Atuação com Exemplo Prático"
                     ]
                     colunas_larguras = {"A": 14, "B": 14, "C": 35, "D": 50}
+                    nome_arquivo_excel = f"Relatorio_NBS_Inteligente_-_Subitem_{subitem_referencia}.xlsx"
                 else:
                     colunas_desejadas = [
                         "Subitem LC 116", 
@@ -327,6 +328,12 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                         "Exemplo Prático"
                     ]
                     colunas_larguras = {"A": 14, "B": 10, "C": 14, "D": 22, "E": 18, "F": 14, "G": 55}
+                    
+                    nbs_referencia_arquivo = ""
+                    if tabela_para_baixar:
+                        nbs_referencia_arquivo = tabela_para_baixar[0].get("Código NBS", "NBS")
+                    
+                    nome_arquivo_excel = f"Relatorio_NBS_Inteligente_-_Subitem_{subitem_referencia}_NBS_{nbs_referencia_arquivo}.xlsx"
 
                 for col in colunas_desejadas:
                     if col not in df_resposta.columns:
@@ -361,9 +368,6 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                                     )
 
                 excel_data = output.getvalue()
-                nome_arquivo_excel = (
-                    f"Relatorio_NBS_Inteligente_-_Subitem_{subitem_referencia}.xlsx"
-                )
                 st.download_button(
                     label="📥 Baixar Relatório em Excel (.xlsx)",
                     data=excel_data,
@@ -453,7 +457,6 @@ if texto_processado:
         subitem_identificado_cache = subitem_encontrado_direto
         info_sub = dicionario_lc116[subitem_encontrado_direto]
 
-        # Popula rigorosamente apenas os NBS oficiais cadastrados na base para este subitem exato
         for nbs_k, nbs_obj in info_sub["nbs_oficiais"].items():
             desc_nbs_oficial = nbs_obj["descricao"]
             if "demolição" in desc_nbs_oficial.lower():
