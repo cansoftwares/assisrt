@@ -180,7 +180,7 @@ def carregar_base_lc116():
                 local_desc = str(row[col_local_ibs]).strip() if col_local_ibs and col_local_ibs in df.columns and pd.notna(row[col_local_ibs]) else "Domicílio principal do adquirente"
                 
                 c_clas = str(row[col_c_clas]).strip() if col_c_clas and col_c_clas in df.columns and pd.notna(row[col_c_clas]) else ""
-                nome_c_clas = str(row[col_nome_c_clas]).strip() if col_nome_c_clas and col_nome_c_clas in df.columns and pd.notna(row[col_nome_c_clas]) else "Situação tributada integralmente pelo IBS e CBS."
+                nome_c_clas = str(row[colnome_c_clas]).strip() if col_nome_c_clas and col_nome_c_clas in df.columns and pd.notna(row[col_nome_c_clas]) else "Situação tributada integralmente pelo IBS e CBS."
 
                 if subitem and subitem != "nan" and cod_nbs and cod_nbs != "nan" and cod_nbs.startswith("1."):
                     if subitem not in base_mapeada:
@@ -238,7 +238,7 @@ system_prompt_base = (
     "3. **Separação Rigorosa de Telas:**\n"
     "   - **Consulta Inicial (Subitem):** Apresente **apenas** a tabela com 4 colunas (`Subitem LC 116`, `Código NBS`, `Descrição Oficial da NBS`, `Área de Atuação com Exemplo Prático`). **NÃO** inclua IndOp, cClassTrib ou Legenda nesta etapa.\n"
     "   - **Aprofundamento (Clique no NBS):** Inicie com simpatia e apresente a tabela de 7 colunas (`Subitem LC 116`, `CTN`, `Código NBS`, `IndOp`, `cClassTrib`, `CST IBS/CBS`, `Exemplo Prático`) e obrigatoriamente inclua a **LEGENDA** detalhando individualmente cada IndOp e cClassTrib extraídos diretamente da base oficial.\n"
-    "4. **Formato JSON Obrigatório para Espelhamento Exato no Excel:** Inclua sempre um bloco de código JSON isolado contendo a chave `dados_tabela`.\n\n"
+    "4. **Formato JSON Obrigatório para Espelhamento Exato no Excel:** Inclua sempre um bloco de código JSON isolado contendo exatamente a chave `dados_tabela` preenchendo as chaves exatas: `Subitem LC 116`, `Código NBS`, `Descrição Oficial da NBS`, `Área de Atuação com Exemplo Prático` (ou as colunas completas no aprofundamento).\n\n"
     "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS / IndOp / cClassTrib):\n"
     f"{resumo_base_texto}"
 )
@@ -495,7 +495,7 @@ Apresente obrigatoriamente a Tabela Markdown limpa com **exatamente 4 colunas**:
 **ATENÇÃO:** É terminantemente proibido exibir menções a IndOp ou cClassTrib nesta tabela inicial, bem como exibir qualquer legenda. A legenda é exclusiva para a tela de aprofundamento.
 
 **OBRIGATÓRIO - BLOCO JSON DE ESPELHAMENTO PARA O EXCEL:**
-No final da resposta, inclua obrigatoriamente um bloco de código JSON isolado contendo exatamente a chave `dados_tabela` com a lista dos objetos gerados.
+No final da resposta, inclua obrigatoriamente um bloco de código JSON isolado contendo exatamente a chave `dados_tabela` contendo a lista com os objetos exatos contendo as chaves: `Subitem LC 116`, `Código NBS`, `Descrição Oficial da NBS`, `Área de Atuação com Exemplo Prático`.
 """
     elif eh_aprofundamento_nbs:
         c_clas_str = dados_tabela_estruturados[0]['cClassTrib'] if dados_tabela_estruturados else ''
@@ -591,12 +591,16 @@ Responda em PRIMEIRA PESSOA DO SINGULAR com foco estrito em LC 116 e Reforma Tri
                             "Exemplo Prático": item.get("Exemplo Prático", item.get("exemplo_pratico", exemplo_val)),
                         })
                     else:
-                        sub_val = item.get("subitem", item.get("subitem_lc_116", subitem_identificado_cache))
+                        sub_val = item.get("Subitem LC 116", item.get("subitem", item.get("subitem_lc_116", subitem_identificado_cache)))
+                        cod_nbs_val = item.get("Código NBS", item.get("codigo_nbs", item.get("nbs", "")))
+                        desc_nbs_val = item.get("Descrição Oficial da NBS", item.get("descricao_nbs", item.get("descricao", "")))
+                        exemplo_pratico_val = item.get("Área de Atuação com Exemplo Prático", item.get("exemplo_pratico", item.get("area_de_atuacao_com_exemplo_pratico", "")))
+
                         temp_estruturados.append({
                             "Subitem LC 116": sub_val,
-                            "Código NBS": item.get("codigo_nbs", item.get("nbs", "")),
-                            "Descrição Oficial da NBS": item.get("descricao_nbs", item.get("descricao", "")),
-                            "Área de Atuação com Exemplo Prático": item.get("exemplo_pratico", item.get("area_de_atuacao_com_exemplo_pratico", "")),
+                            "Código NBS": cod_nbs_val,
+                            "Descrição Oficial da NBS": desc_nbs_val,
+                            "Área de Atuação com Exemplo Prático": exemplo_pratico_val,
                         })
                 if temp_estruturados:
                     dados_tabela_estruturados = temp_estruturados
