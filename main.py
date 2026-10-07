@@ -235,9 +235,10 @@ system_prompt_base = (
     "2. **Tom em Primeira Pessoa do Singular:** Responda SEMPRE em **primeira"
     " pessoa do singular** (ex: 'analisei', 'identifiquei', 'apresento', 'consultei'). É"
     " estritamente proibido o uso do plural.\n"
-    "3. **Estilo Direto e Simpático no Aprofundamento:** Inicie com simpatia e acolhimento (ex: 'Claro! Analisei com atenção o código...').\n"
-    "4. **Agrupamento Preciso:** Tanto os códigos `IndOp` quanto os `cClassTrib` devem ser listados na célula da tabela separados por vírgula (ex: '20201' e '200045, 200046'). Na **LEGENDA**, detalhe rigorosamente cada código individualmente com a sua respectiva descrição oficial extraída da base.\n"
-    "5. **Formato JSON Obrigatório para Espelhamento Exato no Excel:** Inclua sempre um bloco de código JSON isolado contendo a chave `dados_tabela`.\n\n"
+    "3. **Separação Rigorosa de Telas:**\n"
+    "   - **Consulta Inicial (Subitem):** Apresente **apenas** a tabela com 4 colunas (`Subitem LC 116`, `Código NBS`, `Descrição Oficial da NBS`, `Área de Atuação com Exemplo Prático`). **NÃO** inclua IndOp, cClassTrib ou Legenda nesta etapa.\n"
+    "   - **Aprofundamento (Clique no NBS):** Inicie com simpatia e apresente a tabela de 7 colunas (`Subitem LC 116`, `CTN`, `Código NBS`, `IndOp`, `cClassTrib`, `CST IBS/CBS`, `Exemplo Prático`) e obrigatoriamente inclua a **LEGENDA** detalhando individualmente cada IndOp e cClassTrib extraídos diretamente da base oficial.\n"
+    "4. **Formato JSON Obrigatório para Espelhamento Exato no Excel:** Inclua sempre um bloco de código JSON isolado contendo a chave `dados_tabela`.\n\n"
     "### TABELA DE REFERÊNCIA OFICIAL (LC 116 / NBS / IndOp / cClassTrib):\n"
     f"{resumo_base_texto}"
 )
@@ -423,11 +424,18 @@ if texto_processado:
             ind_ops_dict = nbs_obj["ind_ops_detalhes"]
             ind_ops_str = ", ".join(ind_ops_dict.keys())
             
-            exemplo_multiplo = (
-                f"1. Prestação Principal: Execução de serviços referentes a {nbs_obj['descricao'].lower()} para atendimento a clientes corporativos.\n"
-                f"2. Operação Especializada: Atividades técnicas correlatas a {nbs_obj['descricao'].lower()} com emissão de laudo.\n"
-                f"3. Suporte Contínuo: Acompanhamento e suporte operacional especializado em {nbs_obj['descricao'].lower()}."
-            )
+            if "demolição" in nbs_obj["descricao"].lower():
+                exemplo_multiplo = (
+                    "1. Prestação Principal: Execução da demolição controlada de antiga edificação comercial para preparação de terreno.\n"
+                    "2. Operação Especializada: Atividades técnicas correlatas a serviços de demolição com emissão de laudo estrutural.\n"
+                    "3. Suporte Contínuo: Acompanhamento e suporte operacional especializado em serviços de demolição."
+                )
+            else:
+                exemplo_multiplo = (
+                    f"1. Prestação Principal: Execução de serviços referentes a {nbs_obj['descricao'].lower()} para atendimento a clientes corporativos.\n"
+                    f"2. Operação Especializada: Atividades técnicas correlatas a {nbs_obj['descricao'].lower()} com emissão de laudo.\n"
+                    f"3. Suporte Contínuo: Acompanhamento e suporte operacional especializado em {nbs_obj['descricao'].lower()}."
+                )
             
             desc_nbs_oficial_base = nbs_obj["descricao"]
 
@@ -454,7 +462,16 @@ if texto_processado:
 
         for nbs_k, nbs_obj in info_sub["nbs_oficiais"].items():
             desc_nbs_oficial = nbs_obj["descricao"]
-            exemplo_txt = f"Serviços especializados para {desc_nbs_oficial.lower()}."
+            if "demolição" in desc_nbs_oficial.lower():
+                exemplo_txt = "Execução da demolição controlada de uma antiga edificação comercial para preparação do terreno de uma nova obra."
+            elif "contabilidade" in desc_nbs_oficial.lower():
+                exemplo_txt = "Escritório de Contabilidade: Elaboração, assinatura e entrega de balanços patrimoniais, demonstrações de resultados e entrega de obrigações acessórias anuais para empresas do lucro real."
+            elif "escrituração" in desc_nbs_oficial.lower():
+                exemplo_txt = "Empresa de BPO Financeiro: Lançamento diário de notas fiscais de entrada e saída, conciliação bancária e controle do contas a pagar e receber de clientes corporativos."
+            elif "folha" in desc_nbs_oficial.lower():
+                exemplo_txt = "Departamento Pessoal Terceirizado: Cálculo mensal de salários, emissão de guias de encargos sociais (INSS, FGTS), processamento de férias e rescisões contratuais para colaboradores terceirizados de empresas clientes."
+            else:
+                exemplo_txt = f"Serviços especializados para {desc_nbs_oficial.lower()}."
 
             dados_tabela_estruturados.append({
                 "Subitem LC 116": subitem_encontrado_direto,
@@ -474,6 +491,8 @@ Apresente obrigatoriamente a Tabela Markdown limpa com **exatamente 4 colunas**:
 2. Código NBS
 3. Descrição Oficial da NBS
 4. Área de Atuação com Exemplo Prático
+
+**ATENÇÃO:** É terminantemente proibido exibir menções a IndOp ou cClassTrib nesta tabela inicial, bem como exibir qualquer legenda. A legenda é exclusiva para a tela de aprofundamento.
 
 **OBRIGATÓRIO - BLOCO JSON DE ESPELHAMENTO PARA O EXCEL:**
 No final da resposta, inclua obrigatoriamente um bloco de código JSON isolado contendo exatamente a chave `dados_tabela` com a lista dos objetos gerados.
@@ -507,7 +526,7 @@ Inicie com uma abordagem simpática e acolhedora em primeira pessoa: "Claro! Ana
   - CST IBS/CBS: (deixar em branco)
   - Exemplo Prático: {json.dumps(exemplo_val, ensure_ascii=False)}
 
-- Abaixo da tabela, inclua obrigatoriamente a **LEGENDA** detalhando individualmente cada código IndOp e cada código cClassTrib com suas respectivas descrições extraídas da base:
+- Abaixo da tabela, inclua obrigatoriamente a **LEGENDA** detalhando individualmente cada código IndOp e cada código cClassTrib com suas respectivas descrições extraídas diretamente da base oficial:
   **LEGENDA:**
   - **Subitem LC:** {desc_lc_val}
   - **CTN:** 
