@@ -13,29 +13,30 @@ st.set_page_config(
 )
 
 # ==========================================
-# 0. BLOQUEIO DE SEGURANÇA E VALIDAÇÃO DE TOKEN (PHP INTEGRADO)
+# 0. BLOQUEIO DE SEGURANÇA COM SESSÃO PERSISTENTE (STREAMLIT RERUN SAFE)
 # ==========================================
 PALAVRA_SECRETA = "ClaudioDev2026_KeySecret"
 
-# Pega o parâmetro 'token' enviado pela URL do PHP
+# Inicializa a chave de autenticação na memória da sessão se não existir
+if "autenticado" not in st.session_state:
+    st.session_state["autenticado"] = False
+
+# Pega o token da URL (caso venha do PHP agora)
 query_params = st.query_params
 token_recebido = query_params.get("token", "")
 
-def validar_token_php(token):
-    if not token:
-        return False
-    # Aqui podes gerar o hash esperado ou validar se o token veio preenchido corretamente
-    # Para o seu painel atual, se o token existir e tiver o tamanho correto do MD5, é válido!
-    return len(token) == 32
+# Se já estiver autenticado na sessão, não precisa revalidar o token a cada mensagem/clique
+if not st.session_state["autenticado"]:
+    # Valida se o token veio preenchido e tem tamanho de MD5 (32 caracteres)
+    if token_recebido and len(token_recebido) == 32:
+        st.session_state["autenticado"] = True
+    else:
+        st.error("⛔ Acesso Negado! Esta aplicação é restrita e deve ser acedida exclusivamente através do seu Painel de Controle oficial.")
+        st.stop()  # Interrompe a execução imediatamente
 
-# Se o token não estiver presente ou for inválido, bloqueia o acesso imediatamente
-if not validar_token_php(token_recebido):
-    st.error("⛔ Acesso Negado! Esta aplicação é restrita e deve ser acedida exclusivamente através do seu Painel de Controle oficial.")
-    st.stop()  # Interrompe a execução do script para impedir o uso direto
-
-# 🔑 LIMPEZA INSTANTÂNEA DA URL: 
-# Assim que validou, apaga o token da barra de endereços do navegador para ninguém conseguir copiar!
-st.query_params.clear()
+# 🔑 LIMPEZA DA URL: Limpa os parâmetros da barra de endereços sem quebrar o chat
+if token_recebido:
+    st.query_params.clear()
 
 
 # Estilo CSS otimizado para o layout corporativo
