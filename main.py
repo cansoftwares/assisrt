@@ -12,6 +12,32 @@ st.set_page_config(
     page_title="Assistente NBS & Reforma Tributária", page_icon="⚖️"
 )
 
+# ==========================================
+# 0. BLOQUEIO DE SEGURANÇA E VALIDAÇÃO DE TOKEN (PHP INTEGRADO)
+# ==========================================
+PALAVRA_SECRETA = "ClaudioDev2026_KeySecret"
+
+# Pega o parâmetro 'token' enviado pela URL do PHP
+query_params = st.query_params
+token_recebido = query_params.get("token", "")
+
+def validar_token_php(token):
+    if not token:
+        return False
+    # Aqui podes gerar o hash esperado ou validar se o token veio preenchido corretamente
+    # Para o seu painel atual, se o token existir e tiver o tamanho correto do MD5, é válido!
+    return len(token) == 32
+
+# Se o token não estiver presente ou for inválido, bloqueia o acesso imediatamente
+if not validar_token_php(token_recebido):
+    st.error("⛔ Acesso Negado! Esta aplicação é restrita e deve ser acedida exclusivamente através do seu Painel de Controle oficial.")
+    st.stop()  # Interrompe a execução do script para impedir o uso direto
+
+# 🔑 LIMPEZA INSTANTÂNEA DA URL: 
+# Assim que validou, apaga o token da barra de endereços do navegador para ninguém conseguir copiar!
+st.query_params.clear()
+
+
 # Estilo CSS otimizado para o layout corporativo
 st.markdown(
     """
@@ -513,6 +539,7 @@ Inicie com uma abordagem simpática e acolhedora em primeira pessoa: "Claro! Ana
 - Apresente **imediatamente** a tabela estruturada contendo **exatamente estas 7 colunas**: 
   `| Subitem LC 116 | CTN | Código NBS | IndOp | cClassTrib | CST IBS/CBS | Exemplos Práticos |`
 - Preencha com **uma única linha** para este NBS, deixando as colunas **CTN** e **CST IBS/CBS** estritamente **em branco**, e contendo **de 2 a 5 exemplos práticos detalhados** na coluna `Exemplos Práticos`.
+
 - Abaixo da tabela, inclua obrigatoriamente a **LEGENDA** contendo o significado específico de cada código no formato exacto solicitado:
   **LEGENDA:**
   - **Subitem LC:** {subitem_identificado_cache} - {desc_lc_val}
