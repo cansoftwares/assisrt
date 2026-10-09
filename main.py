@@ -176,7 +176,8 @@ def carregar_base_lc116():
             col_nbs = next((c for c in df.columns if "mbs" in c.lower() or "nbs" in c.lower()), df.columns[2])
             col_desc_nbs = next((c for c in df.columns if "descrição" in c.lower() and ("mbs" in c.lower() or "hbs" in c.lower())), df.columns[3] if len(df.columns) > 3 else df.columns[2])
 
-            col_ind_op = next((c for c in df.columns if "indop" in c.lower()), df.columns[6] if len(df.columns) > 6 else "")
+            # Mapeamento robusto para garantir a leitura correta das colunas F (IndOp) e I/H (cClassTrib) com base no seu Excel
+            col_ind_op = next((c for c in df.columns if "indop" in c.lower() or "ind" in c.lower()), df.columns[5] if len(df.columns) > 5 else "")
             col_local_ibs = next((c for c in df.columns if "local" in c.lower() or "incidência" in c.lower()), df.columns[7] if len(df.columns) > 7 else "")
             col_c_clas = next((c for c in df.columns if "cclasstrib" in c.lower() or "cclas" in c.lower()), df.columns[8] if len(df.columns) > 8 else "")
             col_nome_c_clas = df.columns[9] if len(df.columns) > 9 else ""
@@ -186,6 +187,8 @@ def carregar_base_lc116():
             df[col_nbs] = df[col_nbs].ffill()
             if col_desc_nbs in df.columns:
                 df[col_desc_nbs] = df[col_desc_nbs].ffill()
+            if col_ind_op and col_ind_op in df.columns:
+                df[col_ind_op] = df[col_ind_op].ffill()
             if col_c_clas and col_c_clas in df.columns:
                 df[col_c_clas] = df[col_c_clas].ffill()
             if col_nome_c_clas and col_nome_c_clas in df.columns:
