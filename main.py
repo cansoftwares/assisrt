@@ -17,27 +17,21 @@ st.set_page_config(
 # ==========================================
 PALAVRA_SECRETA = "ClaudioDev2026_KeySecret"
 
-# Inicializa a chave de autenticação na memória da sessão se não existir
 if "autenticado" not in st.session_state:
     st.session_state["autenticado"] = False
 
-# Pega o token da URL (caso venha do PHP agora)
 query_params = st.query_params
 token_recebido = query_params.get("token", "")
 
-# Se já estiver autenticado na sessão, não precisa revalidar o token a cada mensagem/clique
 if not st.session_state["autenticado"]:
-    # Valida se o token veio preenchido e tem tamanho de MD5 (32 caracteres)
     if token_recebido and len(token_recebido) == 32:
         st.session_state["autenticado"] = True
     else:
         st.error("⛔ Acesso Negado! Esta aplicação é restrita e deve ser acedida exclusivamente através do seu Painel de Controle oficial.")
-        st.stop()  # Interrompe a execução imediatamente
+        st.stop()
 
-# 🔑 LIMPEZA DA URL: Limpa os parâmetros da barra de endereços sem quebrar o chat
 if token_recebido:
     st.query_params.clear()
-
 
 # Estilo CSS otimizado para o layout corporativo
 st.markdown(
@@ -126,7 +120,6 @@ if "lista_mensagens" not in st.session_state:
 if "pending_nbs_prompt" not in st.session_state:
     st.session_state["pending_nbs_prompt"] = None
 
-# Componente para focar automaticamente no input
 st.components.v1.html(
     """
     <script>
@@ -151,7 +144,6 @@ st.components.v1.html(
     height=0,
 )
 
-# Cabeçalho limpo e descritivo no topo da página
 st.markdown(
     '<p class="cabecalho-principal">⚖️ Assistente NBS & Reforma Tributária</p>',
     unsafe_allow_html=True,
@@ -176,7 +168,6 @@ def carregar_base_lc116():
             col_nbs = next((c for c in df.columns if "mbs" in c.lower() or "nbs" in c.lower()), df.columns[2])
             col_desc_nbs = next((c for c in df.columns if "descrição" in c.lower() and ("mbs" in c.lower() or "hbs" in c.lower())), df.columns[3] if len(df.columns) > 3 else df.columns[2])
 
-            # Mapeamento robusto para garantir a leitura correta das colunas F (IndOp) e I/H (cClassTrib) com base no seu Excel
             col_ind_op = next((c for c in df.columns if "indop" in c.lower() or "ind" in c.lower()), df.columns[5] if len(df.columns) > 5 else "")
             col_local_ibs = next((c for c in df.columns if "local" in c.lower() or "incidência" in c.lower()), df.columns[7] if len(df.columns) > 7 else "")
             col_c_clas = next((c for c in df.columns if "cclasstrib" in c.lower() or "cclas" in c.lower()), df.columns[8] if len(df.columns) > 8 else "")
@@ -303,7 +294,7 @@ for idx, mensagem in enumerate(st.session_state["lista_mensagens"]):
                 "*Importante: Escolha com precisão o NBS, a correta classificação garante a aplicação adequada das regras, mitigando riscos de bitributação ou autuações fiscais.*"
             )
 
-            # Botões de Ações Rápidas
+            # Botões de Ações Rápidas: aparecem SOMENTE na consulta inicial (quando NÃO é aprofundamento)
             if tabela_para_baixar and not eh_aprofundamento:
                 st.markdown(
                     "<small><b>Ações rápidas:</b> <i>(Clique abaixo no NBS escolhido para se aprofundar sobre)</i></small>",
